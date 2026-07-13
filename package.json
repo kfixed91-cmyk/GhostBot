@@ -1,6 +1,6 @@
 {
   "name": "demon-bot-v7",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "description": "GhostBot — A premium, ultra-complete WhatsApp multi-feature bot with Web Dashboard, AI, downloads, stickers, group management, economy, and more.",
   "main": "main.js",
   "scripts": {
@@ -18,7 +18,7 @@
   "author": "King Fixed",
   "license": "MIT",
   "dependencies": {
-    "@whiskeysockets/baileys": "^6.7.23",
+    "@whiskeysockets/baileys": "6.7.23",
     "axios": "^1.7.2",
     "chalk": "^4.1.2",
     "express": "^4.19.2",
