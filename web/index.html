@@ -1120,7 +1120,6 @@ function renderConn(status, qr, pairingCode, phone) {
             <i class="fa-solid fa-globe"></i>
             <input type="text" id="phoneField" class="field"
               placeholder="Egz: 50955394345"
-              value="${phone || ''}"
               inputmode="numeric"
               onkeydown="if(event.key==='Enter') doRequestPairing()">
           </div>
@@ -1291,6 +1290,12 @@ socket.on('pairingCode', data => {
   goTab(document.querySelector('[data-tab=connect]'), 'connect');
   document.getElementById('methodRow').style.display = 'grid';
   renderConn('connecting', null, data.code, data.phoneNumber);
+});
+
+socket.on('pairingError', data => {
+  // Show error in the connect panel instead of leaving user with a spinner
+  goTab(document.querySelector('[data-tab=connect]'), 'connect');
+  showConnError(data.msg || 'Erè pandan jenere kòd la. Eseye ankò.');
 });
 
 socket.on('connectionState', data => {

@@ -43,7 +43,7 @@ if (savedMode) config.MODE = savedMode;
 
 global.__BOT_START_TIME = Date.now();
 global.__BOT_STATE = {
-  connection: "connecting",
+  connection: "close",   // start offline — user must enter their number
   qr: null,
   pairingCode: null,
   phoneNumber: null,
@@ -287,12 +287,14 @@ async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState(config.SESSION_DIR);
     const { version } = await fetchLatestBaileysVersion();
 
-    const usePairing = process.env.PAIRING_MODE === "true" || config.USE_PAIRING_CODE;
-    const phoneNumber = process.env.PAIRING_NUMBER || config.OWNER_NUMBER[0];
+    // Pairing mode ONLY when user explicitly triggers it via /api/pairing
+    // Never auto-pair with OWNER_NUMBER — this is a public bot
+    const usePairing = process.env.PAIRING_MODE === "true";
+    const phoneNumber = process.env.PAIRING_NUMBER || null; // only from user input, no fallback
 
     addLog("info", `Starting GhostBot v7.0...`);
     addLog("info", `Session dir: ${config.SESSION_DIR}`);
-    addLog("info", `Auth mode: ${usePairing ? "Pairing Code" : "QR Code"}`);
+    addLog("info", `Auth mode: ${usePairing && phoneNumber ? "Pairing Code" : "QR Code"}`);
 
     const sock = makeWASocket({
       version,
@@ -326,6 +328,8 @@ async function startBot() {
         console.log(chalk.green.bold(`\n📱 PAIRING CODE: ${chalk.yellow.bold(code)}\n`));
       } catch (e) {
         addLog("error", `Pairing error: ${e.message}`);
+        // Notify dashboard so user sees the error instead of infinite spinner
+        io.emit("pairingError", { msg: e.message });
       }
     }
 
@@ -348,8 +352,12 @@ async function startBot() {
         global.__BOT_STATE.connection = "open";
         global.__BOT_STATE.qr = null;
         global.__BOT_STATE.pairingCode = null;
+        global.__BOT_STATE.phoneNumber = null; // clear — never keep number in memory
         global.__BOT_STATE.userJid = sock.user?.id;
         global.__BOT_STATE.userName = sock.user?.name;
+        // Clear pairing env vars so a restart doesn't re-request a code
+        delete process.env.PAIRING_MODE;
+        delete process.env.PAIRING_NUMBER;
         io.emit("connectionState", { state: "open", user: sock.user });
         addLog("success", `✅ Bot connected! (${sock.user?.id})`);
         console.log(chalk.green.bold(`\n👻 GhostBot — ONLINE!\n`));
