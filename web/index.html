@@ -637,6 +637,168 @@
     .term-msg.warn { color: var(--warning); }
     .term-msg.info { color: #cbd5e1; }
 
+    /* ══════════════════════════════════════
+       PAIRING CODE — ANIMATED DISPLAY
+    ══════════════════════════════════════ */
+    .pairing-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+      padding: 10px 0;
+    }
+
+    .pairing-code-reveal {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .code-digit-block {
+      width: 44px;
+      height: 56px;
+      background: rgba(0, 210, 255, 0.07);
+      border: 1.5px solid var(--primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 900;
+      color: var(--primary);
+      text-shadow: 0 0 12px var(--primary-glow);
+      box-shadow: 0 0 14px rgba(0,210,255,0.18), inset 0 0 10px rgba(0,210,255,0.05);
+      opacity: 0;
+      transform: translateY(20px) scale(0.85);
+      animation: digitPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+
+    .code-digit-block.dash {
+      width: 16px;
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      color: var(--text-muted);
+      font-size: 1.6rem;
+      font-weight: 300;
+    }
+
+    @keyframes digitPop {
+      0%   { opacity: 0; transform: translateY(20px) scale(0.85); }
+      60%  { opacity: 1; transform: translateY(-4px) scale(1.08); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 14px rgba(0,210,255,0.18), inset 0 0 10px rgba(0,210,255,0.05); }
+      50%       { box-shadow: 0 0 28px rgba(0,210,255,0.45), inset 0 0 14px rgba(0,210,255,0.12); }
+    }
+
+    .code-digit-block.done {
+      animation: glowPulse 2.2s ease-in-out infinite;
+    }
+
+    .pairing-instruction {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.6;
+      padding: 0 8px;
+    }
+
+    .pairing-instruction strong {
+      color: var(--primary);
+    }
+
+    .pairing-steps {
+      width: 100%;
+      background: rgba(0,210,255,0.03);
+      border: 1px solid rgba(0,210,255,0.1);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .step-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.72rem;
+      color: #aab;
+      line-height: 1.4;
+    }
+
+    .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #000;
+      font-size: 0.62rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .btn-copy {
+      background: rgba(0,210,255,0.1);
+      border: 1.5px solid var(--primary);
+      color: var(--primary);
+      padding: 13px 20px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.25s;
+      width: 100%;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-copy:hover {
+      background: var(--primary);
+      color: #000;
+      box-shadow: 0 6px 22px var(--primary-glow);
+    }
+
+    .btn-copy.copied {
+      background: var(--success);
+      border-color: var(--success);
+      color: #fff;
+      box-shadow: 0 6px 22px var(--success-glow);
+    }
+
+    .loading-dots {
+      display: inline-flex;
+      gap: 5px;
+    }
+
+    .loading-dots span {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--primary);
+      animation: dotBounce 1.2s infinite;
+    }
+
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotBounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+      40%            { transform: scale(1.1); opacity: 1; }
+    }
+
     /* LOADER overlay */
     .loader-box {
       display: flex;
@@ -679,7 +841,7 @@
     <!-- AVATAR PROFILE BLOCK -->
     <div class="avatar-wrapper">
       <div class="avatar-glow-ring">
-        <img src="/src/assets/ghostbot.png" id="botAvatarPhoto" class="bot-photo" onerror="this.src='https://placehold.co/110/051412/00d2ff?text=GhostBot'">
+        <img src="/ghostbot.png" id="botAvatarPhoto" class="bot-photo" onerror="this.src='https://placehold.co/110/051412/00d2ff?text=GhostBot'">
       </div>
       <h2 class="bot-title" id="lblBotName">GhostBot</h2>
       
@@ -879,24 +1041,88 @@
           // Pairing mode View
           let innerContent = '';
           if (pairingCode) {
+            // Build animated digit blocks for the pairing code (format: XXXX-XXXX)
+            const codeStr = pairingCode.replace(/-/g, '');
+            const part1 = codeStr.slice(0, 4);
+            const part2 = codeStr.slice(4, 8);
+            let digitHTML = '';
+            let delay = 0;
+            for (const ch of part1) {
+              digitHTML += `<div class="code-digit-block" style="animation-delay:${delay}ms">${ch}</div>`;
+              delay += 80;
+            }
+            digitHTML += `<div class="code-digit-block dash" style="animation-delay:${delay}ms; opacity:0; animation:digitPop 0.3s ${delay}ms ease forwards">—</div>`;
+            delay += 60;
+            for (const ch of part2) {
+              digitHTML += `<div class="code-digit-block" style="animation-delay:${delay}ms">${ch}</div>`;
+              delay += 80;
+            }
+
             innerContent = `
-              <div class="pairing-code-box" style="margin: 10px auto; width:100%;">
-                <div class="pairing-code-number">` + pairingCode + `</div>
-                <p class="pairing-code-desc">Mete kòd sa a nan WhatsApp (Link a Device) pou nimewo: <strong>+` + phoneNumber + `</strong></p>
+              <div class="pairing-stage">
+                <p style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; font-weight:700;">
+                  📱 Kòd Koneksyon — +${phoneNumber}
+                </p>
+
+                <div class="pairing-code-reveal" id="codeBlocksRow">
+                  ${digitHTML}
+                </div>
+
+                <button class="btn-copy" id="btnCopyCode" onclick="copyPairingCode('${pairingCode}')">
+                  <i class="fa-regular fa-copy"></i> KOPYE KÒD LA
+                </button>
+
+                <div class="pairing-steps">
+                  <div class="step-row">
+                    <div class="step-num">1</div>
+                    <div>Ouvri <strong style="color:#fff">WhatsApp</strong> sou telefòn ou</div>
+                  </div>
+                  <div class="step-row">
+                    <div class="step-num">2</div>
+                    <div>Ale nan <strong style="color:#fff">Paramèt → Aparèy konekte → Konekte yon aparèy</strong></div>
+                  </div>
+                  <div class="step-row">
+                    <div class="step-num">3</div>
+                    <div>Chwazi <strong style="color:#fff">"Konekte ak nimewo telefòn"</strong></div>
+                  </div>
+                  <div class="step-row">
+                    <div class="step-num">4</div>
+                    <div>Tape kòd la — <strong style="color:var(--primary)">${pairingCode}</strong> — epi valide</div>
+                  </div>
+                </div>
+
+                <button class="btn-cyan" style="background:transparent; border:1px solid var(--border); color:var(--text-muted); box-shadow:none;" onclick="socket.emit('requestState')">
+                  <i class="fa-solid fa-arrows-rotate"></i> Chanje nimewo
+                </button>
               </div>
             `;
+
+            // After render, add glow-pulse to digit blocks once animation completes
+            setTimeout(() => {
+              document.querySelectorAll('.code-digit-block:not(.dash)').forEach(el => el.classList.add('done'));
+            }, delay + 600);
+
           } else {
             innerContent = `
-              <h3 class="input-section-title">ENTREZ LE NUMÉRO AVEC L'INDICATIF</h3>
-              
+              <h3 class="input-section-title">ANTRE NIMEWO AK KÒD PEYI</h3>
+
               <div class="input-wrapper" style="margin-bottom:12px;">
                 <i class="fa-solid fa-globe"></i>
-                <input type="text" id="phoneInputNumber" class="phone-input" placeholder="e.g. 50955394345" value="` + (phoneNumber || '') + `">
+                <input type="text" id="phoneInputNumber" class="phone-input"
+                  placeholder="Egz: 50955394345"
+                  value="` + (phoneNumber || '') + `"
+                  inputmode="numeric"
+                  onkeydown="if(event.key==='Enter') requestPairing()">
               </div>
-              
-              <p class="phone-desc" style="margin-bottom:20px;">Use your WhatsApp number with country code only. Example: <strong>50955394345</strong></p>
-              
-              <button class="btn-cyan" onclick="requestPairing()"><i class="fa-solid fa-bolt"></i> GÉNÉRER LE CODE</button>
+
+              <p class="phone-desc" style="margin-bottom:20px;">
+                Ekri nimewo WhatsApp ou <strong>ak kòd peyi</strong>, san siy + ni espas.<br>
+                Egzanp: <strong>50955394345</strong>
+              </p>
+
+              <button class="btn-cyan" onclick="requestPairing()">
+                <i class="fa-solid fa-bolt"></i> JENERE KÒD LA
+              </button>
             `;
           }
 
@@ -955,16 +1181,80 @@
       if (container.children.length > 100) container.lastChild.remove();
     });
 
-    // API Interactions
+    // ── COPY PAIRING CODE ─────────────────────────────────────
+    function copyPairingCode(code) {
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('btnCopyCode');
+        if (!btn) return;
+        btn.classList.add('copied');
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> KÒD LA KOPYE!';
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = '<i class="fa-regular fa-copy"></i> KOPYE KÒD LA';
+        }, 2500);
+      }).catch(() => {
+        // Fallback for older browsers
+        const ta = document.createElement('textarea');
+        ta.value = code;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        const btn = document.getElementById('btnCopyCode');
+        if (btn) {
+          btn.classList.add('copied');
+          btn.innerHTML = '<i class="fa-solid fa-check"></i> KÒD LA KOPYE!';
+          setTimeout(() => {
+            btn.classList.remove('copied');
+            btn.innerHTML = '<i class="fa-regular fa-copy"></i> KOPYE KÒD LA';
+          }, 2500);
+        }
+      });
+    }
+
+    // ── REQUEST PAIRING CODE ──────────────────────────────────
     function requestPairing() {
       const input = document.getElementById('phoneInputNumber');
       const phone = input ? input.value.trim() : '';
-      if (!phone) return alert('Tanpri mete nimewo WhatsApp ou ak kòd peyi san espas (egz: 50955394345)!');
+      if (!phone) {
+        // Shake the input visually
+        if (input) {
+          input.style.borderColor = 'var(--danger)';
+          input.style.boxShadow = '0 0 12px var(--danger-glow)';
+          setTimeout(() => {
+            input.style.borderColor = '';
+            input.style.boxShadow = '';
+          }, 1500);
+        }
+        return;
+      }
+
+      // Validate: digits only, 10-15 chars
+      if (!/^\d{10,15}$/.test(phone)) {
+        const input2 = document.getElementById('phoneInputNumber');
+        if (input2) {
+          input2.style.borderColor = 'var(--danger)';
+          input2.placeholder = 'Nimewo pa bon — egz: 50955394345';
+          setTimeout(() => {
+            input2.style.borderColor = '';
+            input2.placeholder = 'Egz: 50955394345';
+          }, 2000);
+        }
+        return;
+      }
 
       document.getElementById('connectionPanel').innerHTML = `
-        <div class="loader-box">
-          <i class="fa-solid fa-circle-notch fa-spin"></i>
-          <p>N ap mande WhatsApp kòd koneksyon an... Tann tanpri...</p>
+        <div class="pairing-stage">
+          <p style="font-size:0.72rem; color:var(--text-muted); letter-spacing:1px; font-weight:700;">
+            📡 N ap mande WhatsApp kòd pou +${phone}
+          </p>
+          <div class="loading-dots" style="margin:10px 0;">
+            <span></span><span></span><span></span>
+          </div>
+          <p style="font-size:0.7rem; color:var(--text-muted); text-align:center; line-height:1.6;">
+            Tann ~3 segonn...<br>
+            Ou pral resevwa yon notifikasyon sou WhatsApp
+          </p>
         </div>
       `;
 
@@ -976,13 +1266,28 @@
       .then(res => res.json())
       .then(d => {
         if (!d.ok) {
-          alert('Erè: ' + d.msg);
-          socket.emit('requestState');
+          document.getElementById('connectionPanel').innerHTML = `
+            <div class="pairing-stage">
+              <i class="fa-solid fa-circle-exclamation" style="font-size:2rem; color:var(--danger);"></i>
+              <p style="font-size:0.75rem; color:var(--danger); text-align:center;">${d.msg}</p>
+              <button class="btn-cyan" onclick="socket.emit('requestState')">
+                <i class="fa-solid fa-rotate-left"></i> Eseye Ankò
+              </button>
+            </div>
+          `;
         }
+        // Success: socket 'pairingCode' event will fire and auto-update the UI
       })
-      .catch(e => {
-        alert('Erè koneksyon.');
-        socket.emit('requestState');
+      .catch(() => {
+        document.getElementById('connectionPanel').innerHTML = `
+          <div class="pairing-stage">
+            <i class="fa-solid fa-wifi" style="font-size:2rem; color:var(--danger);"></i>
+            <p style="font-size:0.75rem; color:var(--danger); text-align:center;">Erè koneksyon ak sèvè a.</p>
+            <button class="btn-cyan" onclick="socket.emit('requestState')">
+              <i class="fa-solid fa-rotate-left"></i> Eseye Ankò
+            </button>
+          </div>
+        `;
       });
     }
 
