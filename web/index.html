@@ -3,252 +3,299 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GhostBot - Control Panel</title>
+  <title>GhostBot — Control Panel</title>
   <script src="/socket.io/socket.io.js"></script>
-  <!-- Google Fonts & Icons -->
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&family=Orbitron:wght=500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  
+
   <style>
+    /* ═══════════════════════════════ TOKENS ═══════════════════════════════ */
     :root {
-      --bg: #030a09;
-      --bg-gradient: linear-gradient(135deg, #051412 0%, #010606 100%);
-      --card-bg: rgba(6, 18, 16, 0.7);
-      --border: rgba(0, 210, 255, 0.15);
-      --border-glow: rgba(0, 210, 255, 0.35);
-      --primary: #00d2ff;
-      --primary-glow: rgba(0, 210, 255, 0.4);
-      --success: #10b981;
-      --success-glow: rgba(16, 185, 129, 0.3);
-      --danger: #ef4444;
-      --danger-glow: rgba(239, 68, 68, 0.3);
-      --text: #f3f4f6;
-      --text-muted: #8e9a98;
+      --bg:           #020b09;
+      --card:         rgba(4, 16, 13, 0.85);
+      --border:       rgba(0, 210, 255, 0.14);
+      --border-hi:    rgba(0, 210, 255, 0.38);
+      --primary:      #00d2ff;
+      --primary-glow: rgba(0, 210, 255, 0.38);
+      --purple:       #a855f7;
+      --purple-glow:  rgba(168, 85, 247, 0.35);
+      --success:      #10b981;
+      --success-glow: rgba(16, 185, 129, 0.30);
+      --warn:         #f59e0b;
+      --danger:       #ef4444;
+      --danger-glow:  rgba(239, 68, 68, 0.30);
+      --text:         #f1f5f4;
+      --muted:        #7a8c89;
+      --radius-lg:    20px;
+      --radius-md:    14px;
+      --radius-sm:    10px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: var(--bg);
-      background-image: var(--bg-gradient);
+      background-image: radial-gradient(ellipse at 20% 0%, rgba(0,210,255,0.05) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 100%, rgba(168,85,247,0.05) 0%, transparent 60%);
       color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
       min-height: 100vh;
-      overflow-x: hidden;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 15px;
+      padding: 16px 12px 32px;
+      overflow-x: hidden;
     }
 
-    /* SCROLLBAR */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 10px; }
 
-    /* CORE WRAPPER (MOBILE FIRST AESTHETIC) */
-    .app-phone-container {
-      max-width: 480px;
+    /* ═══════════════════════════════ SHELL ════════════════════════════════ */
+    .shell {
+      max-width: 460px;
       width: 100%;
-      background: rgba(3, 10, 9, 0.9);
-      border: 1px solid rgba(0, 210, 255, 0.2);
-      border-radius: 36px;
-      padding: 24px;
-      backdrop-filter: blur(25px);
-      box-shadow: 0 15px 45px rgba(0, 210, 255, 0.08);
       display: flex;
       flex-direction: column;
-      gap: 20px;
-      position: relative;
+      gap: 16px;
     }
 
-    /* DARK MODE MOON TOGGLE */
-    .moon-toggle {
-      position: absolute;
-      top: 25px;
-      right: 25px;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.05);
+    /* ═══════════════════════════════ TOPBAR ═══════════════════════════════ */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: var(--card);
       border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      backdrop-filter: blur(20px);
+      gap: 12px;
+    }
+
+    .topbar-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .topbar-logo img {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1.5px solid var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .topbar-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, #fff 30%, var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      color: var(--muted);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      color: var(--primary);
-      transition: all 0.3s;
-      z-index: 10;
+      font-size: 0.88rem;
+      transition: all 0.2s;
     }
 
-    .moon-toggle:hover {
-      background: rgba(0, 210, 255, 0.15);
-      box-shadow: 0 0 12px var(--primary-glow);
+    .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* Dekonekte bouton ki toujou vizib */
+    #globalDisconnectBtn {
+      display: none;
+      background: rgba(239,68,68,0.1);
+      border-color: rgba(239,68,68,0.35);
+      color: var(--danger);
     }
 
-    /* HEADER STATS CARDS */
-    .top-stats-row {
+    #globalDisconnectBtn:hover {
+      background: var(--danger);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--danger-glow);
+    }
+
+    /* ═══════════════════════════════ STATS ROW ════════════════════════════ */
+    .stats-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-top: 20px;
+      gap: 10px;
     }
 
-    .stat-mini-card {
-      background: rgba(255, 255, 255, 0.03);
+    .stat-card {
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 14px 8px;
+      border-radius: var(--radius-md);
+      padding: 14px 10px;
       text-align: center;
-      backdrop-filter: blur(10px);
-      transition: all 0.3s;
+      transition: border-color 0.2s;
     }
 
-    .stat-mini-card:hover {
-      border-color: var(--primary);
-      box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
-    }
+    .stat-card:hover { border-color: var(--border-hi); }
 
-    .stat-mini-val {
-      font-size: 1.15rem;
-      font-weight: 800;
+    .stat-val {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
       color: var(--primary);
       text-shadow: 0 0 8px var(--primary-glow);
       margin-bottom: 4px;
-      font-family: 'Orbitron', sans-serif;
     }
 
-    .stat-mini-lbl {
-      font-size: 0.62rem;
+    .stat-lbl {
+      font-size: 0.58rem;
       font-weight: 700;
-      color: var(--text-muted);
-      letter-spacing: 1px;
+      color: var(--muted);
+      letter-spacing: 1.2px;
       text-transform: uppercase;
     }
 
-    /* CENTRAL AVATAR CONTAINER */
-    .avatar-wrapper {
+    /* ═══════════════════════════════ AVATAR HERO ══════════════════════════ */
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      padding: 28px 20px 22px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      margin: 10px 0;
+      gap: 12px;
       position: relative;
+      overflow: hidden;
     }
 
-    .avatar-glow-ring {
-      position: relative;
-      width: 140px;
-      height: 140px;
-      border-radius: 32px;
-      background: rgba(0, 210, 255, 0.05);
-      border: 1.5px solid rgba(0, 210, 255, 0.1);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 15px;
-    }
-
-    .avatar-glow-ring::after {
+    .hero::before {
       content: '';
       position: absolute;
-      width: 156px;
-      height: 156px;
-      border-radius: 38px;
-      border: 1px dashed rgba(0, 210, 255, 0.15);
-      animation: spin 20s linear infinite;
+      top: -40px; left: 50%;
+      transform: translateX(-50%);
+      width: 200px; height: 200px;
+      background: radial-gradient(circle, rgba(0,210,255,0.08) 0%, transparent 70%);
+      pointer-events: none;
     }
 
-    @keyframes spin {
-      100% { transform: rotate(360deg); }
+    .avatar-ring {
+      position: relative;
+      width: 130px;
+      height: 130px;
     }
 
-    .bot-photo {
-      width: 110px;
-      height: 110px;
-      border-radius: 24px;
-      border: 2px solid var(--primary);
-      box-shadow: 0 0 25px var(--primary-glow);
+    .avatar-ring::before, .avatar-ring::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      border: 1px dashed rgba(0,210,255,0.2);
+    }
+
+    .avatar-ring::before {
+      inset: -14px;
+      animation: spin 25s linear infinite;
+    }
+
+    .avatar-ring::after {
+      inset: -26px;
+      border-color: rgba(168,85,247,0.12);
+      animation: spin 40s linear infinite reverse;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .avatar-img {
+      width: 130px;
+      height: 130px;
+      border-radius: 28px;
       object-fit: cover;
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 30px var(--primary-glow);
+      display: block;
     }
 
-    /* BOT NAME */
     .bot-title {
-      font-size: 1.65rem;
-      font-weight: 800;
-      letter-spacing: 1.5px;
-      color: #fff;
-      text-align: center;
-      margin-bottom: 5px;
-      background: linear-gradient(135deg, #fff, var(--primary));
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #fff 40%, var(--primary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      margin-top: 4px;
     }
 
-    /* STATUS PILL BADGE */
+    .bot-subtitle {
+      font-size: 0.68rem;
+      color: var(--muted);
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
     .status-pill {
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid var(--success);
-      color: var(--success);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
       padding: 6px 18px;
       border-radius: 30px;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 800;
       letter-spacing: 1px;
       text-transform: uppercase;
-      box-shadow: 0 0 15px var(--success-glow);
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      border: 1px solid;
+      transition: all 0.3s;
     }
 
-    .status-pill.connecting {
-      background: rgba(245, 158, 11, 0.1);
-      border-color: var(--warning);
-      color: var(--warning);
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
-    }
+    .status-pill.online  { background: rgba(16,185,129,0.1); border-color: var(--success); color: var(--success); box-shadow: 0 0 16px var(--success-glow); }
+    .status-pill.connecting { background: rgba(245,158,11,0.1); border-color: var(--warn); color: var(--warn); }
+    .status-pill.close   { background: rgba(239,68,68,0.1); border-color: var(--danger); color: var(--danger); }
+    .status-pill.qr      { background: rgba(0,210,255,0.08); border-color: var(--primary); color: var(--primary); }
 
-    .status-pill.close {
-      background: rgba(239, 68, 68, 0.1);
-      border-color: var(--danger);
-      color: var(--danger);
-      box-shadow: 0 0 15px var(--danger-glow);
-    }
-
-    .status-pill .pulse-dot {
-      width: 6px;
-      height: 6px;
+    .pulse-dot {
+      width: 6px; height: 6px;
       border-radius: 50%;
       background: currentColor;
       box-shadow: 0 0 6px currentColor;
-      animation: pulse 1.5s infinite;
+      animation: pulse 1.6s infinite;
     }
 
-    /* NAVIGATION TABS (CHAK BAGAY PAJ YO) */
-    .tab-bar-nav {
+    @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(0.7); } }
+
+    /* ═══════════════════════════════ NAV TABS ═════════════════════════════ */
+    .tab-nav {
       display: flex;
-      justify-content: space-around;
-      background: rgba(255, 255, 255, 0.02);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 6px;
-      margin-bottom: 10px;
+      border-radius: var(--radius-md);
+      padding: 5px;
+      gap: 3px;
     }
 
     .nav-btn {
+      flex: 1;
       background: transparent;
       border: none;
-      color: var(--text-muted);
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 0.8rem;
+      color: var(--muted);
+      padding: 9px 6px;
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
       font-weight: 600;
       cursor: pointer;
       display: flex;
@@ -256,1181 +303,1158 @@
       align-items: center;
       gap: 4px;
       transition: all 0.2s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    .nav-btn i {
-      font-size: 1rem;
-    }
+    .nav-btn i { font-size: 1rem; }
 
     .nav-btn.active {
+      background: rgba(0,210,255,0.1);
       color: var(--primary);
-      background: rgba(0, 210, 255, 0.08);
-      box-shadow: inset 0 0 10px rgba(0, 210, 255, 0.05);
+      box-shadow: inset 0 0 12px rgba(0,210,255,0.06);
     }
 
-    /* TABS DISPLAY SYSTEM */
-    .tab-content {
+    /* ═══════════════════════════════ TAB PANELS ═══════════════════════════ */
+    .tab-panel {
       display: none;
-      animation: slideUp 0.35s ease-out forwards;
-    }
-
-    .tab-content.active {
-      display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 14px;
+      animation: fadeUp 0.3s ease-out;
     }
 
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to { opacity: 1; transform: translateY(0); }
+    .tab-panel.active { display: flex; }
+
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
     }
 
-    /* DUAL SWITCH BUTTONS (PAIRING vs QR) */
-    .connection-toggle-container {
+    /* ═══════════════════════════════ CARDS ════════════════════════════════ */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+
+    .card-title {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ═══════════════════════════════ AKÈY (HOME CONNECTED) ════════════════ */
+    .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      background: rgba(0, 0, 0, 0.35);
+      gap: 10px;
+    }
+
+    .info-cell {
+      background: rgba(255,255,255,0.02);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 6px;
-      margin-bottom: 10px;
-    }
-
-    .toggle-sub-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
+      border-radius: var(--radius-sm);
       padding: 12px;
-      font-size: 0.82rem;
+    }
+
+    .info-cell-lbl {
+      font-size: 0.6rem;
       font-weight: 700;
-      cursor: pointer;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s;
-    }
-
-    .toggle-sub-btn.active {
-      background: var(--primary);
-      color: #000;
-      box-shadow: 0 4px 15px var(--primary-glow);
-    }
-
-    /* INPUTS & LABELS */
-    .input-section-title {
-      font-size: 0.78rem;
-      font-weight: 800;
-      color: var(--primary);
+      color: var(--muted);
       letter-spacing: 1px;
       text-transform: uppercase;
-      text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
     }
 
-    .input-wrapper {
-      position: relative;
+    .info-cell-val {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #fff;
+      word-break: break-all;
+    }
+
+    .quick-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .qa-btn {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 12px;
+      color: var(--text);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .qa-btn i { font-size: 1rem; color: var(--primary); }
+    .qa-btn:hover { border-color: var(--border-hi); background: rgba(0,210,255,0.05); }
+
+    .qa-btn.danger i  { color: var(--danger); }
+    .qa-btn.danger:hover { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.06); }
+
+    /* ═══════════════════════════════ CONNECTION FLOW ══════════════════════ */
+    .conn-method-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 5px;
+      gap: 4px;
+    }
+
+    .method-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 11px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .method-btn.active { background: var(--primary); color: #000; box-shadow: 0 3px 12px var(--primary-glow); }
+
+    /* Input */
+    .input-wrap { position: relative; }
+    .input-wrap i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 0.9rem; }
+
+    .field {
       width: 100%;
-    }
-
-    .input-wrapper i {
-      position: absolute;
-      left: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      font-size: 0.95rem;
-    }
-
-    .phone-input {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(255,255,255,0.03);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 16px 16px 16px 48px;
-      border-radius: 16px;
-      font-size: 0.9rem;
+      padding: 15px 15px 15px 46px;
+      border-radius: var(--radius-md);
+      font-size: 0.88rem;
       outline: none;
-      transition: all 0.3s;
-      letter-spacing: 0.5px;
+      transition: all 0.25s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    .phone-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 15px var(--primary-glow);
-      background: rgba(0, 210, 255, 0.02);
+    .field:focus { border-color: var(--primary); box-shadow: 0 0 14px var(--primary-glow); background: rgba(0,210,255,0.02); }
+    .field.shake { border-color: var(--danger) !important; box-shadow: 0 0 12px var(--danger-glow) !important; animation: shake 0.35s ease; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
     }
 
-    .phone-desc {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-      text-align: center;
-      padding: 0 10px;
+    .hint { font-size: 0.68rem; color: var(--muted); line-height: 1.6; text-align: center; }
+    .hint strong { color: var(--primary); }
+
+    /* Buttons */
+    .btn {
+      border: none;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.22s;
+      width: 100%;
+      letter-spacing: 0.4px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    .phone-desc strong {
+    .btn-primary { background: var(--primary); color: #000; box-shadow: 0 4px 18px var(--primary-glow); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 7px 24px var(--primary-glow); }
+
+    .btn-outline {
+      background: rgba(0,210,255,0.07);
+      border: 1.5px solid var(--primary);
       color: var(--primary);
     }
+    .btn-outline:hover { background: var(--primary); color: #000; box-shadow: 0 5px 20px var(--primary-glow); }
 
-    /* PRIMARY CYAN BUTTON */
-    .btn-cyan {
-      background: var(--primary);
-      color: #000;
-      border: none;
-      padding: 15px 25px;
-      border-radius: 16px;
-      font-size: 0.88rem;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s;
-      box-shadow: 0 5px 20px rgba(0, 210, 255, 0.25);
-      width: 100%;
-      letter-spacing: 0.5px;
-    }
-
-    .btn-cyan:hover {
-      box-shadow: 0 8px 25px var(--primary-glow);
-      transform: translateY(-1px);
-    }
-
-    /* GREEN CHANNEL/ACTION BUTTON */
-    .btn-green {
-      background: #10b981;
-      color: #fff;
-      border: none;
-      padding: 15px 25px;
-      border-radius: 16px;
-      font-size: 0.88rem;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s;
-      box-shadow: 0 5px 20px rgba(16, 185, 129, 0.2);
-      width: 100%;
-      letter-spacing: 0.5px;
-    }
-
-    .btn-green:hover {
-      box-shadow: 0 8px 25px var(--success-glow);
-      transform: translateY(-1px);
-    }
-
-    .btn-danger {
-      background: var(--danger);
-      color: white;
-      box-shadow: 0 5px 20px rgba(239, 68, 68, 0.2);
-    }
-
-    .btn-danger:hover {
-      box-shadow: 0 8px 25px var(--danger-glow);
-    }
-
-    /* DYNAMIC QR BOX */
-    .qr-box-inner {
+    .btn-ghost {
+      background: rgba(255,255,255,0.03);
       border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.02);
-      border-radius: 16px;
+      color: var(--muted);
+    }
+    .btn-ghost:hover { border-color: var(--border-hi); color: var(--text); }
+
+    .btn-danger-solid { background: var(--danger); color: #fff; box-shadow: 0 4px 16px var(--danger-glow); }
+    .btn-danger-solid:hover { transform: translateY(-1px); box-shadow: 0 7px 22px var(--danger-glow); }
+
+    /* Copy btn */
+    .btn-copy {
+      background: rgba(0,210,255,0.08);
+      border: 1.5px solid var(--border-hi);
+      color: var(--primary);
+    }
+    .btn-copy:hover { background: var(--primary); color: #000; box-shadow: 0 5px 20px var(--primary-glow); }
+    .btn-copy.copied { background: var(--success); border-color: var(--success); color: #fff; box-shadow: 0 5px 18px var(--success-glow); }
+
+    /* ═══════════════════════════════ PAIRING CODE ANIMATION ════════════════ */
+    .code-reveal {
+      display: flex;
+      gap: 7px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 4px 0;
+    }
+
+    .code-block {
+      width: 46px; height: 58px;
+      background: rgba(0,210,255,0.06);
+      border: 1.5px solid var(--primary);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.35rem; font-weight: 900;
+      color: var(--primary);
+      text-shadow: 0 0 12px var(--primary-glow);
+      box-shadow: 0 0 12px rgba(0,210,255,0.15), inset 0 0 8px rgba(0,210,255,0.04);
+      opacity: 0;
+      transform: translateY(22px) scale(0.82);
+      animation: popUp 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+
+    .code-block.sep {
+      width: 14px; background: transparent; border: none; box-shadow: none;
+      color: var(--muted); font-size: 1.5rem; font-weight: 300;
+    }
+
+    @keyframes popUp {
+      0%   { opacity:0; transform:translateY(22px) scale(0.82); }
+      65%  { opacity:1; transform:translateY(-5px) scale(1.1); }
+      100% { opacity:1; transform:translateY(0) scale(1); }
+    }
+
+    @keyframes codeGlow {
+      0%,100% { box-shadow: 0 0 12px rgba(0,210,255,0.15), inset 0 0 8px rgba(0,210,255,0.04); }
+      50%      { box-shadow: 0 0 26px rgba(0,210,255,0.42), inset 0 0 14px rgba(0,210,255,0.10); }
+    }
+
+    .code-block.lit { animation: codeGlow 2s ease-in-out infinite; }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 9px; }
+
+    .step {
+      display: flex; align-items: flex-start; gap: 10px;
+      font-size: 0.7rem; color: #9aabb0; line-height: 1.5;
+    }
+
+    .step-n {
+      width: 22px; height: 22px; flex-shrink: 0;
+      border-radius: 50%;
+      background: var(--primary); color: #000;
+      font-size: 0.6rem; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 1px;
+    }
+
+    /* Loading dots */
+    .dots { display: inline-flex; gap: 5px; }
+    .dots span {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--primary);
+      animation: bounce 1.2s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes bounce { 0%,80%,100% { transform:scale(0.7); opacity:0.5; } 40% { transform:scale(1.1); opacity:1; } }
+
+    /* QR */
+    .qr-wrap {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
       padding: 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      gap: 12px;
       text-align: center;
-      width: 100%;
     }
 
-    /* COMMANDS TAB */
-    .search-container {
-      position: relative;
-      width: 100%;
-    }
+    .qr-wrap img { border-radius: 12px; max-width: 200px; width: 100%; }
 
-    .search-container i {
-      position: absolute;
-      left: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-    }
-
-    .search-input-field {
-      width: 100%;
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 12px 12px 12px 42px;
-      border-radius: 12px;
-      font-size: 0.8rem;
-      outline: none;
-      transition: all 0.3s;
-    }
-
-    .search-input-field:focus {
-      border-color: var(--primary);
-    }
-
-    .commands-scroll {
-      max-height: 380px;
-      overflow-y: auto;
+    /* Connected banner */
+    .online-banner {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      padding-right: 4px;
+      align-items: center;
+      gap: 10px;
+      padding: 20px 10px;
+      text-align: center;
     }
 
-    .cmd-accordion {
+    .online-check { font-size: 3.2rem; color: var(--success); text-shadow: 0 0 24px var(--success-glow); }
+    .online-title { font-weight: 800; font-size: 1.1rem; color: #fff; }
+    .online-sub   { font-size: 0.72rem; color: var(--muted); line-height: 1.5; }
+
+    /* ═══════════════════════════════ COMMANDS ══════════════════════════════ */
+    .search-wrap { position: relative; }
+    .search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+
+    .search-field {
+      width: 100%;
+      background: rgba(0,0,0,0.3);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.01);
-      overflow: hidden;
+      color: var(--text);
+      padding: 11px 11px 11px 40px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    .cmd-acc-header {
-      background: rgba(0, 210, 255, 0.03);
-      padding: 12px 16px;
-      font-size: 0.8rem;
+    .search-field:focus { border-color: var(--primary); }
+
+    .cmds-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 2px; }
+
+    .cat-block { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+
+    .cat-head {
+      background: rgba(0,210,255,0.04);
+      padding: 11px 14px;
+      font-size: 0.75rem;
       font-weight: 700;
       color: var(--primary);
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      user-select: none;
     }
 
-    .cmd-acc-body {
+    .cat-head .cat-icon { font-size: 1rem; }
+
+    .cat-body {
       display: none;
-      padding: 12px;
+      padding: 10px;
       border-top: 1px solid var(--border);
-      background: rgba(0, 0, 0, 0.15);
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
+      background: rgba(0,0,0,0.12);
     }
 
-    .cmd-accordion.open .cmd-acc-body {
-      display: flex;
-    }
+    .cat-block.open .cat-body { display: flex; }
 
-    .cmd-item-row {
+    .cmd-row {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(0,210,255,0.06);
+      border-radius: 8px;
+      padding: 9px 11px;
       display: flex;
       flex-direction: column;
       gap: 3px;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(0, 210, 255, 0.05);
-      padding: 8px 10px;
-      border-radius: 8px;
     }
 
-    .cmd-item-name {
-      font-weight: 700;
-      color: #fff;
-      font-size: 0.78rem;
-    }
+    .cmd-name { font-weight: 700; color: #fff; font-size: 0.78rem; }
+    .cmd-desc { font-size: 0.67rem; color: var(--muted); }
+    .cmd-alias { font-size: 0.62rem; color: var(--primary); }
 
-    .cmd-item-desc {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-    }
-
-    /* GROUPS TAB */
-    .groups-scroll {
-      max-height: 420px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding-right: 4px;
-    }
+    /* ═══════════════════════════════ GROUPS ════════════════════════════════ */
+    .groups-list { display: flex; flex-direction: column; gap: 10px; max-height: 430px; overflow-y: auto; }
 
     .grp-card {
-      background: rgba(255, 255, 255, 0.02);
+      background: rgba(255,255,255,0.02);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      padding: 13px;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
-    .grp-name {
-      font-weight: 700;
-      font-size: 0.85rem;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .grp-name { font-weight: 700; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .grp-meta { font-size: 0.67rem; color: var(--muted); }
 
-    .grp-meta {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-    }
+    .grp-toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
-    .grp-switch-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .grp-toggle-btn {
+    .grp-btn {
       padding: 8px;
-      font-size: 0.72rem;
-      font-weight: 700;
+      font-size: 0.7rem; font-weight: 700;
       border-radius: 8px;
       border: 1px solid transparent;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
       transition: all 0.2s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    .grp-toggle-btn.active {
-      background: rgba(16, 185, 129, 0.1);
-      border-color: var(--success);
-      color: var(--success);
-    }
+    .grp-btn.on  { background: rgba(16,185,129,0.1); border-color: var(--success); color: var(--success); }
+    .grp-btn.off { background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08); color: var(--muted); }
 
-    .grp-toggle-btn.inactive {
-      background: rgba(255, 255, 255, 0.03);
-      border-color: rgba(255, 255, 255, 0.08);
-      color: var(--text-muted);
-    }
+    /* ═══════════════════════════════ LOGS ══════════════════════════════════ */
+    .log-header { display: flex; align-items: center; justify-content: space-between; }
+    .log-clear { background: none; border: 1px solid var(--border); color: var(--muted); padding: 5px 10px; border-radius: 7px; font-size: 0.68rem; cursor: pointer; transition: all 0.2s; }
+    .log-clear:hover { border-color: var(--danger); color: var(--danger); }
 
-    /* TERMINAL LOGS */
-    .term-box {
-      background: #010404;
+    .terminal {
+      background: #010504;
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius-md);
       padding: 12px;
-      font-family: monospace;
-      font-size: 0.72rem;
-      height: 380px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.7rem;
+      height: 360px;
       overflow-y: auto;
       display: flex;
       flex-direction: column-reverse;
-      gap: 4px;
+      gap: 3px;
     }
 
-    .term-line {
-      display: flex;
-      gap: 10px;
-    }
+    .log-line { display: flex; gap: 10px; line-height: 1.5; }
+    .log-ts   { color: var(--primary); flex-shrink: 0; }
+    .log-msg  { word-break: break-all; }
+    .log-msg.info    { color: #c8d8d5; }
+    .log-msg.success { color: var(--success); }
+    .log-msg.error   { color: var(--danger); }
+    .log-msg.warn    { color: var(--warn); }
 
-    .term-ts {
-      color: #00d2ff;
-      flex-shrink: 0;
-    }
-
-    .term-msg { word-break: break-all; }
-    .term-msg.success { color: var(--success); }
-    .term-msg.error { color: var(--danger); }
-    .term-msg.warn { color: var(--warning); }
-    .term-msg.info { color: #cbd5e1; }
-
-    /* ══════════════════════════════════════
-       PAIRING CODE — ANIMATED DISPLAY
-    ══════════════════════════════════════ */
-    .pairing-stage {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 18px;
-      padding: 10px 0;
-    }
-
-    .pairing-code-reveal {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .code-digit-block {
-      width: 44px;
-      height: 56px;
-      background: rgba(0, 210, 255, 0.07);
-      border: 1.5px solid var(--primary);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.35rem;
-      font-weight: 900;
-      color: var(--primary);
-      text-shadow: 0 0 12px var(--primary-glow);
-      box-shadow: 0 0 14px rgba(0,210,255,0.18), inset 0 0 10px rgba(0,210,255,0.05);
-      opacity: 0;
-      transform: translateY(20px) scale(0.85);
-      animation: digitPop 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards;
-    }
-
-    .code-digit-block.dash {
-      width: 16px;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      color: var(--text-muted);
-      font-size: 1.6rem;
-      font-weight: 300;
-    }
-
-    @keyframes digitPop {
-      0%   { opacity: 0; transform: translateY(20px) scale(0.85); }
-      60%  { opacity: 1; transform: translateY(-4px) scale(1.08); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    @keyframes glowPulse {
-      0%, 100% { box-shadow: 0 0 14px rgba(0,210,255,0.18), inset 0 0 10px rgba(0,210,255,0.05); }
-      50%       { box-shadow: 0 0 28px rgba(0,210,255,0.45), inset 0 0 14px rgba(0,210,255,0.12); }
-    }
-
-    .code-digit-block.done {
-      animation: glowPulse 2.2s ease-in-out infinite;
-    }
-
-    .pairing-instruction {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      text-align: center;
-      line-height: 1.6;
-      padding: 0 8px;
-    }
-
-    .pairing-instruction strong {
-      color: var(--primary);
-    }
-
-    .pairing-steps {
-      width: 100%;
-      background: rgba(0,210,255,0.03);
-      border: 1px solid rgba(0,210,255,0.1);
-      border-radius: 14px;
-      padding: 14px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .step-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 0.72rem;
-      color: #aab;
-      line-height: 1.4;
-    }
-
-    .step-num {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: #000;
-      font-size: 0.62rem;
-      font-weight: 900;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 1px;
-    }
-
-    .btn-copy {
-      background: rgba(0,210,255,0.1);
-      border: 1.5px solid var(--primary);
-      color: var(--primary);
-      padding: 13px 20px;
-      border-radius: 14px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.25s;
-      width: 100%;
-      letter-spacing: 0.5px;
-    }
-
-    .btn-copy:hover {
-      background: var(--primary);
-      color: #000;
-      box-shadow: 0 6px 22px var(--primary-glow);
-    }
-
-    .btn-copy.copied {
-      background: var(--success);
-      border-color: var(--success);
-      color: #fff;
-      box-shadow: 0 6px 22px var(--success-glow);
-    }
-
-    .loading-dots {
-      display: inline-flex;
-      gap: 5px;
-    }
-
-    .loading-dots span {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--primary);
-      animation: dotBounce 1.2s infinite;
-    }
-
-    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes dotBounce {
-      0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
-      40%            { transform: scale(1.1); opacity: 1; }
-    }
-
-    /* LOADER overlay */
-    .loader-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px 0;
-      color: var(--primary);
-    }
-
-    .loader-box i {
-      font-size: 2rem;
-      margin-bottom: 10px;
-    }
+    /* ═══════════════════════════════ LOADER ════════════════════════════════ */
+    .loader { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 24px 0; color: var(--primary); }
+    .loader i { font-size: 1.8rem; }
+    .loader p { font-size: 0.73rem; color: var(--muted); }
   </style>
 </head>
 <body>
-  <div class="app-phone-container">
-    <!-- MOON DECORATION -->
-    <div class="moon-toggle">
-      <i class="fa-solid fa-moon"></i>
-    </div>
+<div class="shell">
 
-    <!-- HEADER STATS -->
-    <div class="top-stats-row">
-      <div class="stat-mini-card">
-        <div class="stat-mini-val" id="topUptime">0s</div>
-        <div class="stat-mini-lbl" id="lblUptime">ACTIF</div>
-      </div>
-      <div class="stat-mini-card">
-        <div class="stat-mini-val" id="topMsgs">0</div>
-        <div class="stat-mini-lbl">MESAJ</div>
-      </div>
-      <div class="stat-mini-card">
-        <div class="stat-mini-val" id="topErrors">0</div>
-        <div class="stat-mini-lbl">ERÈ</div>
-      </div>
+  <!-- ── TOPBAR ─────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="topbar-logo">
+      <img src="/ghostbot.png" alt="GhostBot" onerror="this.src='https://placehold.co/38/020b09/00d2ff?text=G'">
+      <span class="topbar-name" id="lblBotName">GhostBot</span>
     </div>
-
-    <!-- AVATAR PROFILE BLOCK -->
-    <div class="avatar-wrapper">
-      <div class="avatar-glow-ring">
-        <img src="/ghostbot.png" id="botAvatarPhoto" class="bot-photo" onerror="this.src='https://placehold.co/110/051412/00d2ff?text=GhostBot'">
-      </div>
-      <h2 class="bot-title" id="lblBotName">GhostBot</h2>
-      
-      <!-- ONLINE STATUS CAPSULE -->
-      <div id="statusCapsule" class="status-pill connecting">
-        <span class="pulse-dot"></span>
-        <span id="statusCapsuleText">KONEKTE...</span>
-      </div>
-    </div>
-
-    <!-- CORE TAB NAVIGATION -->
-    <nav class="tab-bar-nav">
-      <button class="nav-btn active" onclick="switchNavTab('home')">
-        <i class="fa-solid fa-qrcode"></i>
-        <span>Koneksyon</span>
+    <div class="topbar-right">
+      <!-- Bouton Restart -->
+      <button class="icon-btn" title="Rekòmanse bot la" onclick="restartBot()">
+        <i class="fa-solid fa-arrows-rotate"></i>
       </button>
-      <button class="nav-btn" onclick="switchNavTab('commands')">
-        <i class="fa-solid fa-list"></i>
-        <span>Kòmand yo</span>
+      <!-- Bouton Dekonekte — toujou vizib lè bot konekte -->
+      <button class="icon-btn" id="globalDisconnectBtn" title="Dekonekte WhatsApp" onclick="logoutBot()">
+        <i class="fa-solid fa-power-off"></i>
       </button>
-      <button class="nav-btn" onclick="switchNavTab('groups')">
-        <i class="fa-solid fa-users"></i>
-        <span>Gwoup yo</span>
-      </button>
-      <button class="nav-btn" onclick="switchNavTab('logs')">
-        <i class="fa-solid fa-terminal"></i>
-        <span>Logs</span>
-      </button>
-    </nav>
-
-    <!-- ────────────────────────────────────────── -->
-    <!-- TAB: HOME / KONEKSYON -->
-    <!-- ────────────────────────────────────────── -->
-    <div id="view-home" class="tab-content active">
-      <!-- SELECT CONNECTION METHOD -->
-      <div class="connection-toggle-container" id="connToggleRow">
-        <button class="toggle-sub-btn active" id="btnModePairing" onclick="setConnectionMethod('pairing')">
-          <i class="fa-solid fa-mobile-screen-button"></i> Pairing Code
-        </button>
-        <button class="toggle-sub-btn" id="btnModeQR" onclick="setConnectionMethod('qr')">
-          <i class="fa-solid fa-qrcode"></i> QR Code
-        </button>
-      </div>
-
-      <!-- MAIN CONNECTION CARD (DYNAMICS CHANGE BASED ON WA STATUS) -->
-      <div id="connectionPanel">
-        <!-- Default loader -->
-        <div class="loader-box">
-          <i class="fa-solid fa-circle-notch fa-spin"></i>
-          <p>Ap chaje koneksyon sistèm lan...</p>
-        </div>
-      </div>
     </div>
+  </header>
 
-    <!-- ────────────────────────────────────────── -->
-    <!-- TAB: COMMANDS -->
-    <!-- ────────────────────────────────────────── -->
-    <div id="view-commands" class="tab-content">
-      <div class="search-container">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        <input type="text" id="cmdSearch" class="search-input-field" placeholder="Chèche yon kòmand pa non..." oninput="filterCmdList()">
-      </div>
-      
-      <div class="commands-scroll" id="commandsScrollList">
-        <p style="text-align:center; padding:20px; color:var(--text-muted);">Ap chaje kòmand yo...</p>
-      </div>
+  <!-- ── STATS ──────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val" id="topUptime">—</div>
+      <div class="stat-lbl">Tan Aktif</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-val" id="topMsgs">0</div>
+      <div class="stat-lbl">Mesaj</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="topErrors">0</div>
+      <div class="stat-lbl">Erè</div>
+    </div>
+  </div>
 
-    <!-- ────────────────────────────────────────── -->
-    <!-- TAB: GROUPS -->
-    <!-- ────────────────────────────────────────── -->
-    <div id="view-groups" class="tab-content">
-      <p id="grpOfflineMsg" style="text-align:center; padding:40px 10px; color:var(--text-muted); font-size:0.8rem; line-height:1.4;">
-        <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:var(--primary); display:block; margin-bottom:12px;"></i>
-        Ou dwe konekte bot la sou WhatsApp anvan pou w ka jere gwoup yo!
+  <!-- ── HERO AVATAR ────────────────────────────────────────── -->
+  <div class="hero">
+    <div class="avatar-ring">
+      <img src="/ghostbot.png" class="avatar-img" alt="GhostBot" onerror="this.src='https://placehold.co/130/020b09/00d2ff?text=👻'">
+    </div>
+    <h1 class="bot-title">GhostBot</h1>
+    <p class="bot-subtitle">Smart · Fast · Powerful</p>
+    <div id="statusPill" class="status-pill connecting">
+      <span class="pulse-dot"></span>
+      <span id="statusText">Konekte sèvè...</span>
+    </div>
+  </div>
+
+  <!-- ── NAV ───────────────────────────────────────────────── -->
+  <nav class="tab-nav">
+    <button class="nav-btn active" data-tab="home" onclick="goTab(this,'home')">
+      <i class="fa-solid fa-house"></i><span>Akèy</span>
+    </button>
+    <button class="nav-btn" data-tab="connect" onclick="goTab(this,'connect')">
+      <i class="fa-solid fa-link"></i><span>Koneksyon</span>
+    </button>
+    <button class="nav-btn" data-tab="commands" onclick="goTab(this,'commands')">
+      <i class="fa-solid fa-list"></i><span>Kòmand</span>
+    </button>
+    <button class="nav-btn" data-tab="groups" onclick="goTab(this,'groups')">
+      <i class="fa-solid fa-users"></i><span>Gwoup</span>
+    </button>
+    <button class="nav-btn" data-tab="logs" onclick="goTab(this,'logs')">
+      <i class="fa-solid fa-terminal"></i><span>Logs</span>
+    </button>
+  </nav>
+
+  <!-- ════════════════════════════════════════════════════════
+       TAB: AKÈY (HOME)
+  ═════════════════════════════════════════════════════════ -->
+  <div id="tab-home" class="tab-panel active">
+
+    <!-- Lè bot dekonekte -->
+    <div id="homeOffline" class="card" style="text-align:center; padding:28px 18px; display:flex; flex-direction:column; align-items:center; gap:14px;">
+      <i class="fa-solid fa-ghost" style="font-size:3rem; color:var(--primary); text-shadow:0 0 20px var(--primary-glow);"></i>
+      <h2 style="font-size:1.1rem; font-weight:800;">Bot la pa konekte</h2>
+      <p style="font-size:0.72rem; color:var(--muted); line-height:1.6; max-width:280px;">
+        Ale nan tab <strong style="color:var(--primary)">Koneksyon</strong> epi konekte WhatsApp ou pou bot la kòmanse travay.
       </p>
-      <div class="groups-scroll" id="groupsScrollList" style="display:none;">
-        <!-- Group cards -->
-      </div>
+      <button class="btn btn-primary" style="max-width:220px;" onclick="goTab(document.querySelector('[data-tab=connect]'),'connect')">
+        <i class="fa-solid fa-link"></i> Konekte Kounye a
+      </button>
     </div>
 
-    <!-- ────────────────────────────────────────── -->
-    <!-- TAB: LOGS -->
-    <!-- ────────────────────────────────────────── -->
-    <div id="view-logs" class="tab-content">
-      <div class="term-box" id="termLogsBox">
-        <div class="term-line">
-          <span class="term-ts">--:--:--</span>
-          <span class="term-msg info">Konekte sou tèminal sèvè...</span>
+    <!-- Lè bot online -->
+    <div id="homeOnline" style="display:none; flex-direction:column; gap:14px;">
+
+      <!-- Bot info card -->
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-circle-info"></i> Enfòmasyon Bot</div>
+        <div class="info-grid">
+          <div class="info-cell">
+            <div class="info-cell-lbl">Non Bot</div>
+            <div class="info-cell-val" id="infoName">GhostBot</div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-lbl">Mod</div>
+            <div class="info-cell-val" id="infoMode">—</div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-lbl">Nimewo</div>
+            <div class="info-cell-val" id="infoPhone">—</div>
+          </div>
+          <div class="info-cell">
+            <div class="info-cell-lbl">Kòmand Aktif</div>
+            <div class="info-cell-val" id="infoCmds">—</div>
+          </div>
+          <div class="info-cell" style="grid-column:1/-1;">
+            <div class="info-cell-lbl">Prefix</div>
+            <div class="info-cell-val" id="infoPrefix">.</div>
+          </div>
         </div>
+      </div>
+
+      <!-- Aksyon rapid -->
+      <div class="card">
+        <div class="card-title"><i class="fa-solid fa-bolt"></i> Aksyon Rapid</div>
+        <div class="quick-actions">
+          <button class="qa-btn" onclick="goTab(document.querySelector('[data-tab=commands]'),'commands')">
+            <i class="fa-solid fa-list"></i> Wè Kòmand yo
+          </button>
+          <button class="qa-btn" onclick="goTab(document.querySelector('[data-tab=groups]'),'groups')">
+            <i class="fa-solid fa-users"></i> Jere Gwoup yo
+          </button>
+          <button class="qa-btn" onclick="goTab(document.querySelector('[data-tab=logs]'),'logs')">
+            <i class="fa-solid fa-terminal"></i> Wè Logs
+          </button>
+          <button class="qa-btn" onclick="restartBot()">
+            <i class="fa-solid fa-arrows-rotate"></i> Rekòmanse Bot
+          </button>
+          <button class="qa-btn danger" onclick="logoutBot()" style="grid-column:1/-1;">
+            <i class="fa-solid fa-power-off"></i> Dekonekte WhatsApp
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════
+       TAB: KONEKSYON
+  ═════════════════════════════════════════════════════════ -->
+  <div id="tab-connect" class="tab-panel">
+
+    <!-- Method toggle -->
+    <div class="conn-method-row" id="methodRow">
+      <button class="method-btn active" id="btnPairing" onclick="setMethod('pairing')">
+        <i class="fa-solid fa-mobile-screen-button"></i> Pairing Code
+      </button>
+      <button class="method-btn" id="btnQR" onclick="setMethod('qr')">
+        <i class="fa-solid fa-qrcode"></i> QR Code
+      </button>
+    </div>
+
+    <!-- Dynamic panel -->
+    <div id="connPanel">
+      <div class="loader">
+        <i class="fa-solid fa-circle-notch fa-spin"></i>
+        <p>N ap chaje eta koneksyon an...</p>
       </div>
     </div>
 
   </div>
 
-  <script>
-    const socket = io();
-    let uptimeSeconds = 0;
-    let uptimeInt = null;
-    let connectionMethod = 'pairing'; // default 'pairing' oswa 'qr'
-    let fullCommandsData = {};
+  <!-- ════════════════════════════════════════════════════════
+       TAB: KÒMAND
+  ═════════════════════════════════════════════════════════ -->
+  <div id="tab-commands" class="tab-panel">
+    <div class="search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="cmdSearch" class="search-field" placeholder="Chèche yon kòmand..." oninput="filterCmds()">
+    </div>
+    <div id="cmdsList" class="cmds-list">
+      <div class="loader"><i class="fa-solid fa-circle-notch fa-spin"></i><p>Ap chaje kòmand yo...</p></div>
+    </div>
+  </div>
 
-    function switchNavTab(tabId) {
-      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  <!-- ════════════════════════════════════════════════════════
+       TAB: GWOUP
+  ═════════════════════════════════════════════════════════ -->
+  <div id="tab-groups" class="tab-panel">
+    <div id="groupsOffline" class="card" style="text-align:center; padding:32px 18px; display:flex; flex-direction:column; align-items:center; gap:12px;">
+      <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:var(--warn);"></i>
+      <p style="font-size:0.75rem; color:var(--muted); line-height:1.5;">Konekte bot la sou WhatsApp anvan pou w ka wè ak jere gwoup yo.</p>
+    </div>
+    <div id="groupsList" class="groups-list" style="display:none;"></div>
+  </div>
 
-      event.currentTarget.classList.add('active');
-      document.getElementById('view-' + tabId).classList.add('active');
-    }
+  <!-- ════════════════════════════════════════════════════════
+       TAB: LOGS
+  ═════════════════════════════════════════════════════════ -->
+  <div id="tab-logs" class="tab-panel">
+    <div class="log-header">
+      <div class="card-title" style="margin:0;"><i class="fa-solid fa-terminal"></i> Tèminal Sèvè</div>
+      <button class="log-clear" onclick="clearLogs()"><i class="fa-solid fa-trash"></i> Efase</button>
+    </div>
+    <div class="terminal" id="terminal">
+      <div class="log-line">
+        <span class="log-ts">--:--:--</span>
+        <span class="log-msg info">Konekte sou tèminal sèvè a...</span>
+      </div>
+    </div>
+  </div>
 
-    function setConnectionMethod(method) {
-      connectionMethod = method;
-      document.getElementById('btnModePairing').className = method === 'pairing' ? 'toggle-sub-btn active' : 'toggle-sub-btn';
-      document.getElementById('btnModeQR').className = method === 'qr' ? 'toggle-sub-btn active' : 'toggle-sub-btn';
-      socket.emit('requestState');
-    }
+</div><!-- /shell -->
 
-    function formatTime(sec) {
-      const d = Math.floor(sec / 86400);
-      const h = Math.floor((sec % 86400) / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      const s = sec % 60;
-      if (d > 0) return d + 'j ' + h + 'è';
-      if (h > 0) return h + 'è ' + m + 'm';
-      if (m > 0) return m + 'm ' + s + 's';
-      return s + 'sek';
-    }
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+const socket = io();
+let uptimeSec = 0;
+let uptimeTimer = null;
+let connMethod = 'pairing';
+let allCmds = {};
+let botConnected = false;
 
-    function setCapsuleStatus(status) {
-      const badge = document.getElementById('statusCapsule');
-      const text = document.getElementById('statusCapsuleText');
-      badge.className = 'status-pill ' + status;
-      
-      const labels = {
-        online: 'SYSTEM SOU ENTÈNÈT',
-        connecting: 'KONEKTE SÈVÈ...',
-        close: 'BOT DEKONEKTE',
-        qr: 'PARE POU SCAN'
-      };
-      
-      text.textContent = labels[status] || status.toUpperCase();
-    }
+/* ═══════════════════════════════════════════════════════════════
+   NAV TABS
+═══════════════════════════════════════════════════════════════ */
+function goTab(btn, id) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
 
-    // Socket: General state update listener
-    socket.on('state', (data) => {
-      setCapsuleStatus(data.connection);
-      
-      // Update top stats
-      document.getElementById('topMsgs').textContent = data.stats?.messagesProcessed || 0;
-      document.getElementById('topErrors').textContent = data.stats?.errors || 0;
-      document.getElementById('lblBotName').textContent = data.config?.BOT_NAME || 'GhostBot';
+/* ═══════════════════════════════════════════════════════════════
+   TIME FORMAT
+═══════════════════════════════════════════════════════════════ */
+function fmtTime(s) {
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return d + 'j ' + h + 'è';
+  if (h > 0) return h + 'è ' + m + 'm';
+  if (m > 0) return m + 'm ' + sec + 's';
+  return sec + 'sek';
+}
 
-      if (data.uptime) {
-        clearInterval(uptimeInt);
-        uptimeSeconds = data.uptime;
-        document.getElementById('topUptime').textContent = formatTime(uptimeSeconds);
-        uptimeInt = setInterval(() => {
-          uptimeSeconds++;
-          document.getElementById('topUptime').textContent = formatTime(uptimeSeconds);
-        }, 1000);
-      }
+/* ═══════════════════════════════════════════════════════════════
+   STATUS PILL
+═══════════════════════════════════════════════════════════════ */
+const STATUS_LABEL = {
+  open:       'SOU ENTÈNÈT ✓',
+  online:     'SOU ENTÈNÈT ✓',
+  connecting: 'Konekte...',
+  close:      'Dekonekte',
+  qr:         'Pare pou Scan',
+};
 
-      // Populate Connection Views
-      renderConnectionFlow(data.connection, data.qr, data.pairingCode, data.phoneNumber);
+const STATUS_CLASS = {
+  open: 'online', online: 'online', connecting: 'connecting', close: 'close', qr: 'qr',
+};
 
-      // Load Groups list if bot is connected
-      if (data.connection === 'online' || data.connection === 'open') {
-        document.getElementById('grpOfflineMsg').style.display = 'none';
-        document.getElementById('groupsScrollList').style.display = 'flex';
-        loadGroupList();
-      } else {
-        document.getElementById('grpOfflineMsg').style.display = 'block';
-        document.getElementById('groupsScrollList').style.display = 'none';
-      }
-    });
+function setStatus(st) {
+  const pill = document.getElementById('statusPill');
+  const txt  = document.getElementById('statusText');
+  pill.className = 'status-pill ' + (STATUS_CLASS[st] || 'connecting');
+  txt.textContent = STATUS_LABEL[st] || st.toUpperCase();
+}
 
-    function renderConnectionFlow(status, qrCode, pairingCode, phoneNumber) {
-      const panel = document.getElementById('connectionPanel');
-      const toggleRow = document.getElementById('connToggleRow');
+/* ═══════════════════════════════════════════════════════════════
+   SOCKET: MAIN STATE
+═══════════════════════════════════════════════════════════════ */
+socket.on('state', data => {
+  const st = data.connection;
+  setStatus(st);
 
-      if (status === 'open' || status === 'online') {
-        // Connected View
-        toggleRow.style.display = 'none';
-        panel.innerHTML = `
-          <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin:20px 0;">
-            <i class="fa-solid fa-circle-check" style="font-size:3rem; color:var(--success); text-shadow:0 0 20px var(--success-glow)"></i>
-            <h3 style="font-weight:800; font-size:1.15rem; color:#fff;">SOU ENTÈNÈT AK SIKSE!</h3>
-            <p style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Bot la konekte sou kont WhatsApp ou epi li pare pou l jere tout kòmand.</p>
+  const connected = st === 'open' || st === 'online';
+  botConnected = connected;
+
+  // Topbar disconnect button
+  document.getElementById('globalDisconnectBtn').style.display = connected ? 'flex' : 'none';
+
+  // Stats
+  document.getElementById('topMsgs').textContent   = data.stats?.messagesProcessed || 0;
+  document.getElementById('topErrors').textContent  = data.stats?.errors || 0;
+  document.getElementById('lblBotName').textContent = data.config?.BOT_NAME || 'GhostBot';
+
+  // Uptime
+  if (data.uptime) {
+    clearInterval(uptimeTimer);
+    uptimeSec = data.uptime;
+    document.getElementById('topUptime').textContent = fmtTime(uptimeSec);
+    uptimeTimer = setInterval(() => {
+      uptimeSec++;
+      document.getElementById('topUptime').textContent = fmtTime(uptimeSec);
+    }, 1000);
+  }
+
+  // Home tab
+  updateHomePage(connected, data);
+
+  // Connection tab
+  renderConn(st, data.qr, data.pairingCode, data.phoneNumber);
+
+  // Groups
+  if (connected) {
+    document.getElementById('groupsOffline').style.display = 'none';
+    document.getElementById('groupsList').style.display = 'flex';
+    loadGroups();
+  } else {
+    document.getElementById('groupsOffline').style.display = 'flex';
+    document.getElementById('groupsList').style.display = 'none';
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   HOME PAGE
+═══════════════════════════════════════════════════════════════ */
+function updateHomePage(connected, data) {
+  document.getElementById('homeOffline').style.display = connected ? 'none' : 'flex';
+  const homeOnline = document.getElementById('homeOnline');
+  homeOnline.style.display = connected ? 'flex' : 'none';
+
+  if (connected && data.config) {
+    document.getElementById('infoName').textContent   = data.config.BOT_NAME || 'GhostBot';
+    document.getElementById('infoMode').textContent   = (data.config.MODE || 'public').toUpperCase();
+    document.getElementById('infoPrefix').textContent = data.config.PREFIX || '.';
+    document.getElementById('infoPhone').textContent  = data.phoneNumber ? '+' + data.phoneNumber : data.userJid?.split('@')[0] || '—';
+    document.getElementById('infoCmds').textContent   = data.totalCommands || '—';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONNECTION TAB
+═══════════════════════════════════════════════════════════════ */
+function setMethod(m) {
+  connMethod = m;
+  document.getElementById('btnPairing').className = m === 'pairing' ? 'method-btn active' : 'method-btn';
+  document.getElementById('btnQR').className      = m === 'qr'      ? 'method-btn active' : 'method-btn';
+  socket.emit('requestState');
+}
+
+function renderConn(status, qr, pairingCode, phone) {
+  const panel     = document.getElementById('connPanel');
+  const methodRow = document.getElementById('methodRow');
+  const connected = status === 'open' || status === 'online';
+
+  if (connected) {
+    methodRow.style.display = 'none';
+    panel.innerHTML = `
+      <div class="online-banner">
+        <div class="online-check"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="online-title">Koneksyon Aktif!</div>
+        <div class="online-sub">Bot la konekte epi l prè pou jere tout kòmand WhatsApp ou yo.</div>
+      </div>
+      <button class="btn btn-danger-solid" onclick="logoutBot()">
+        <i class="fa-solid fa-power-off"></i> DEKONEKTE WHATSAPP
+      </button>
+    `;
+    return;
+  }
+
+  methodRow.style.display = 'grid';
+
+  if (connMethod === 'pairing') {
+    if (pairingCode) {
+      panel.innerHTML = buildPairingCodeUI(pairingCode, phone);
+      // Add lit animation after digits appear
+      const raw   = pairingCode.replace(/-/g,'');
+      const delay = raw.length * 80 + 700;
+      setTimeout(() => {
+        document.querySelectorAll('.code-block:not(.sep)').forEach(el => el.classList.add('lit'));
+      }, delay);
+    } else {
+      panel.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card-title" style="justify-content:center; margin:0;">
+            <i class="fa-solid fa-mobile-screen-button"></i> Antre Nimewo WhatsApp ou
           </div>
-          
-          <button class="btn-cyan btn-danger" onclick="logoutBot()"><i class="fa-solid fa-power-off"></i> DEKONEKTE BOT LA</button>
-        `;
-      } else {
-        toggleRow.style.display = 'grid';
-
-        if (connectionMethod === 'pairing') {
-          // Pairing mode View
-          let innerContent = '';
-          if (pairingCode) {
-            // Build animated digit blocks for the pairing code (format: XXXX-XXXX)
-            const codeStr = pairingCode.replace(/-/g, '');
-            const part1 = codeStr.slice(0, 4);
-            const part2 = codeStr.slice(4, 8);
-            let digitHTML = '';
-            let delay = 0;
-            for (const ch of part1) {
-              digitHTML += `<div class="code-digit-block" style="animation-delay:${delay}ms">${ch}</div>`;
-              delay += 80;
-            }
-            digitHTML += `<div class="code-digit-block dash" style="animation-delay:${delay}ms; opacity:0; animation:digitPop 0.3s ${delay}ms ease forwards">—</div>`;
-            delay += 60;
-            for (const ch of part2) {
-              digitHTML += `<div class="code-digit-block" style="animation-delay:${delay}ms">${ch}</div>`;
-              delay += 80;
-            }
-
-            innerContent = `
-              <div class="pairing-stage">
-                <p style="font-size:0.7rem; color:var(--text-muted); letter-spacing:1px; text-transform:uppercase; font-weight:700;">
-                  📱 Kòd Koneksyon — +${phoneNumber}
-                </p>
-
-                <div class="pairing-code-reveal" id="codeBlocksRow">
-                  ${digitHTML}
-                </div>
-
-                <button class="btn-copy" id="btnCopyCode" onclick="copyPairingCode('${pairingCode}')">
-                  <i class="fa-regular fa-copy"></i> KOPYE KÒD LA
-                </button>
-
-                <div class="pairing-steps">
-                  <div class="step-row">
-                    <div class="step-num">1</div>
-                    <div>Ouvri <strong style="color:#fff">WhatsApp</strong> sou telefòn ou</div>
-                  </div>
-                  <div class="step-row">
-                    <div class="step-num">2</div>
-                    <div>Ale nan <strong style="color:#fff">Paramèt → Aparèy konekte → Konekte yon aparèy</strong></div>
-                  </div>
-                  <div class="step-row">
-                    <div class="step-num">3</div>
-                    <div>Chwazi <strong style="color:#fff">"Konekte ak nimewo telefòn"</strong></div>
-                  </div>
-                  <div class="step-row">
-                    <div class="step-num">4</div>
-                    <div>Tape kòd la — <strong style="color:var(--primary)">${pairingCode}</strong> — epi valide</div>
-                  </div>
-                </div>
-
-                <button class="btn-cyan" style="background:transparent; border:1px solid var(--border); color:var(--text-muted); box-shadow:none;" onclick="socket.emit('requestState')">
-                  <i class="fa-solid fa-arrows-rotate"></i> Chanje nimewo
-                </button>
-              </div>
-            `;
-
-            // After render, add glow-pulse to digit blocks once animation completes
-            setTimeout(() => {
-              document.querySelectorAll('.code-digit-block:not(.dash)').forEach(el => el.classList.add('done'));
-            }, delay + 600);
-
-          } else {
-            innerContent = `
-              <h3 class="input-section-title">ANTRE NIMEWO AK KÒD PEYI</h3>
-
-              <div class="input-wrapper" style="margin-bottom:12px;">
-                <i class="fa-solid fa-globe"></i>
-                <input type="text" id="phoneInputNumber" class="phone-input"
-                  placeholder="Egz: 50955394345"
-                  value="` + (phoneNumber || '') + `"
-                  inputmode="numeric"
-                  onkeydown="if(event.key==='Enter') requestPairing()">
-              </div>
-
-              <p class="phone-desc" style="margin-bottom:20px;">
-                Ekri nimewo WhatsApp ou <strong>ak kòd peyi</strong>, san siy + ni espas.<br>
-                Egzanp: <strong>50955394345</strong>
-              </p>
-
-              <button class="btn-cyan" onclick="requestPairing()">
-                <i class="fa-solid fa-bolt"></i> JENERE KÒD LA
-              </button>
-            `;
-          }
-
-          panel.innerHTML = innerContent;
-        } else {
-          // QR Code mode View
-          panel.innerHTML = `
-            <div class="qr-box-inner" style="margin-bottom:15px;">
-              <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:15px;">Eskane kòd QR la sou WhatsApp nan Linked Devices:</p>
-              <div class="qr-container">
-                <img src="` + (qrCode || 'https://placehold.co/180?text=Konekte...') + `" alt="QR Code">
-              </div>
-            </div>
-            <button class="btn-cyan btn-outline" style="border-color:var(--border)" onclick="restartBot()"><i class="fa-solid fa-arrows-rotate"></i> REKÒMANSE BOT LA</button>
-          `;
-        }
-      }
-    }
-
-    // Socket Event listeners
-    socket.on('qr', (url) => {
-      connectionMethod = 'qr';
-      document.getElementById('btnModePairing').className = 'toggle-sub-btn';
-      document.getElementById('btnModeQR').className = 'toggle-sub-btn active';
-      socket.emit('requestState');
-    });
-
-    socket.on('pairingCode', (data) => {
-      connectionMethod = 'pairing';
-      document.getElementById('btnModePairing').className = 'toggle-sub-btn active';
-      document.getElementById('btnModeQR').className = 'toggle-sub-btn';
-      renderConnectionFlow('connecting', null, data.code, data.phoneNumber);
-    });
-
-    socket.on('connectionState', (data) => {
-      setCapsuleStatus(data.state);
-      socket.emit('requestState');
-    });
-
-    socket.on('stats', (stats) => {
-      document.getElementById('topMsgs').textContent = stats.messagesProcessed || 0;
-      document.getElementById('topErrors').textContent = stats.errors || 0;
-    });
-
-    socket.on('log', (entry) => {
-      const container = document.getElementById('termLogsBox');
-      const time = new Date(entry.time).toLocaleTimeString();
-      const div = document.createElement('div');
-      div.className = 'term-line';
-      div.innerHTML = `
-        <span class="term-ts">` + time + `</span>
-        <span class="term-msg ` + entry.level + `">` + entry.msg + `</span>
-      `;
-      container.prepend(div);
-      
-      if (container.children.length > 100) container.lastChild.remove();
-    });
-
-    // ── COPY PAIRING CODE ─────────────────────────────────────
-    function copyPairingCode(code) {
-      navigator.clipboard.writeText(code).then(() => {
-        const btn = document.getElementById('btnCopyCode');
-        if (!btn) return;
-        btn.classList.add('copied');
-        btn.innerHTML = '<i class="fa-solid fa-check"></i> KÒD LA KOPYE!';
-        setTimeout(() => {
-          btn.classList.remove('copied');
-          btn.innerHTML = '<i class="fa-regular fa-copy"></i> KOPYE KÒD LA';
-        }, 2500);
-      }).catch(() => {
-        // Fallback for older browsers
-        const ta = document.createElement('textarea');
-        ta.value = code;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        ta.remove();
-        const btn = document.getElementById('btnCopyCode');
-        if (btn) {
-          btn.classList.add('copied');
-          btn.innerHTML = '<i class="fa-solid fa-check"></i> KÒD LA KOPYE!';
-          setTimeout(() => {
-            btn.classList.remove('copied');
-            btn.innerHTML = '<i class="fa-regular fa-copy"></i> KOPYE KÒD LA';
-          }, 2500);
-        }
-      });
-    }
-
-    // ── REQUEST PAIRING CODE ──────────────────────────────────
-    function requestPairing() {
-      const input = document.getElementById('phoneInputNumber');
-      const phone = input ? input.value.trim() : '';
-      if (!phone) {
-        // Shake the input visually
-        if (input) {
-          input.style.borderColor = 'var(--danger)';
-          input.style.boxShadow = '0 0 12px var(--danger-glow)';
-          setTimeout(() => {
-            input.style.borderColor = '';
-            input.style.boxShadow = '';
-          }, 1500);
-        }
-        return;
-      }
-
-      // Validate: digits only, 10-15 chars
-      if (!/^\d{10,15}$/.test(phone)) {
-        const input2 = document.getElementById('phoneInputNumber');
-        if (input2) {
-          input2.style.borderColor = 'var(--danger)';
-          input2.placeholder = 'Nimewo pa bon — egz: 50955394345';
-          setTimeout(() => {
-            input2.style.borderColor = '';
-            input2.placeholder = 'Egz: 50955394345';
-          }, 2000);
-        }
-        return;
-      }
-
-      document.getElementById('connectionPanel').innerHTML = `
-        <div class="pairing-stage">
-          <p style="font-size:0.72rem; color:var(--text-muted); letter-spacing:1px; font-weight:700;">
-            📡 N ap mande WhatsApp kòd pou +${phone}
-          </p>
-          <div class="loading-dots" style="margin:10px 0;">
-            <span></span><span></span><span></span>
+          <div class="input-wrap">
+            <i class="fa-solid fa-globe"></i>
+            <input type="text" id="phoneField" class="field"
+              placeholder="Egz: 50955394345"
+              value="${phone || ''}"
+              inputmode="numeric"
+              onkeydown="if(event.key==='Enter') doRequestPairing()">
           </div>
-          <p style="font-size:0.7rem; color:var(--text-muted); text-align:center; line-height:1.6;">
-            Tann ~3 segonn...<br>
-            Ou pral resevwa yon notifikasyon sou WhatsApp
+          <p class="hint">
+            Ekri nimewo ou <strong>ak kòd peyi</strong>, san <strong>+</strong> ni espas.<br>
+            Egzanp: <strong>50955394345</strong>
           </p>
+          <button class="btn btn-primary" onclick="doRequestPairing()">
+            <i class="fa-solid fa-bolt"></i> JENERE KÒD LA
+          </button>
         </div>
       `;
+    }
+  } else {
+    panel.innerHTML = `
+      <div class="qr-wrap">
+        <p class="hint">Eskane kòd QR la ak WhatsApp:<br><strong>Paramèt → Aparèy konekte → Skane QR</strong></p>
+        <img src="${qr || 'https://placehold.co/200/020b09/00d2ff?text=Ap+chaje...'}" alt="QR Code">
+        <p class="hint">Kòd la rafrechi chak 60 segonn.</p>
+      </div>
+      <button class="btn btn-ghost" onclick="restartBot()">
+        <i class="fa-solid fa-arrows-rotate"></i> Rekòmanse Bot
+      </button>
+    `;
+  }
+}
 
-      fetch('/api/pairing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber: phone })
-      })
-      .then(res => res.json())
-      .then(d => {
-        if (!d.ok) {
-          document.getElementById('connectionPanel').innerHTML = `
-            <div class="pairing-stage">
-              <i class="fa-solid fa-circle-exclamation" style="font-size:2rem; color:var(--danger);"></i>
-              <p style="font-size:0.75rem; color:var(--danger); text-align:center;">${d.msg}</p>
-              <button class="btn-cyan" onclick="socket.emit('requestState')">
-                <i class="fa-solid fa-rotate-left"></i> Eseye Ankò
-              </button>
-            </div>
-          `;
-        }
-        // Success: socket 'pairingCode' event will fire and auto-update the UI
-      })
-      .catch(() => {
-        document.getElementById('connectionPanel').innerHTML = `
-          <div class="pairing-stage">
-            <i class="fa-solid fa-wifi" style="font-size:2rem; color:var(--danger);"></i>
-            <p style="font-size:0.75rem; color:var(--danger); text-align:center;">Erè koneksyon ak sèvè a.</p>
-            <button class="btn-cyan" onclick="socket.emit('requestState')">
-              <i class="fa-solid fa-rotate-left"></i> Eseye Ankò
+function buildPairingCodeUI(code, phone) {
+  const raw   = code.replace(/-/g,'');
+  const p1    = raw.slice(0,4);
+  const p2    = raw.slice(4,8);
+  let digits  = '';
+  let delay   = 0;
+
+  for (const ch of p1) {
+    digits += `<div class="code-block" style="animation-delay:${delay}ms">${ch}</div>`;
+    delay += 80;
+  }
+  digits += `<div class="code-block sep" style="animation-delay:${delay}ms; opacity:0; animation:popUp 0.3s ${delay}ms ease forwards">—</div>`;
+  delay  += 60;
+  for (const ch of p2) {
+    digits += `<div class="code-block" style="animation-delay:${delay}ms">${ch}</div>`;
+    delay += 80;
+  }
+
+  return `
+    <div style="display:flex;flex-direction:column;gap:14px;align-items:center;">
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:1px;font-weight:700;text-transform:uppercase;">
+        📱 Kòd pou +${phone || ''}
+      </p>
+
+      <div class="code-reveal">${digits}</div>
+
+      <button class="btn btn-copy" id="btnCopy" onclick="doCopy('${code}')">
+        <i class="fa-regular fa-copy"></i> KOPYE KÒD LA
+      </button>
+
+      <div class="card" style="width:100%;padding:14px;">
+        <div class="steps">
+          <div class="step"><div class="step-n">1</div><div>Ouvri <strong style="color:#fff">WhatsApp</strong> sou telefòn ou</div></div>
+          <div class="step"><div class="step-n">2</div><div>Ale nan <strong style="color:#fff">Paramèt → Aparèy konekte → Konekte yon aparèy</strong></div></div>
+          <div class="step"><div class="step-n">3</div><div>Chwazi <strong style="color:#fff">"Konekte ak nimewo telefòn"</strong></div></div>
+          <div class="step"><div class="step-n">4</div><div>Tape kòd la: <strong style="color:var(--primary)">${code}</strong></div></div>
+        </div>
+      </div>
+
+      <button class="btn btn-ghost" onclick="socket.emit('requestState')">
+        <i class="fa-solid fa-arrows-rotate"></i> Chanje nimewo
+      </button>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COPY CODE
+═══════════════════════════════════════════════════════════════ */
+function doCopy(code) {
+  const set = (ok) => {
+    const btn = document.getElementById('btnCopy');
+    if (!btn) return;
+    if (ok) {
+      btn.classList.add('copied');
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> KÒD LA KOPYE!';
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = '<i class="fa-regular fa-copy"></i> KOPYE KÒD LA';
+      }, 2600);
+    }
+  };
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => set(true)).catch(() => fallback(code, set));
+  } else { fallback(code, set); }
+}
+
+function fallback(code, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = code; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); cb(true); } catch(e) {}
+  ta.remove();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REQUEST PAIRING
+═══════════════════════════════════════════════════════════════ */
+function doRequestPairing() {
+  const el    = document.getElementById('phoneField');
+  const phone = el ? el.value.trim() : '';
+
+  if (!phone || !/^\d{10,15}$/.test(phone)) {
+    if (el) {
+      el.classList.add('shake');
+      el.style.borderColor = 'var(--danger)';
+      setTimeout(() => { el.classList.remove('shake'); el.style.borderColor = ''; }, 800);
+    }
+    return;
+  }
+
+  document.getElementById('connPanel').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 0;">
+      <p style="font-size:0.7rem;color:var(--muted);font-weight:700;letter-spacing:1px;">
+        📡 N ap mande kòd pou +${phone}
+      </p>
+      <div class="dots"><span></span><span></span><span></span></div>
+      <p class="hint">Tann ~3 segonn...<br>WhatsApp ap voye yon notifikasyon.</p>
+    </div>
+  `;
+
+  fetch('/api/pairing', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phoneNumber: phone })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (!d.ok) showConnError(d.msg || 'Erè enkoni');
+  })
+  .catch(() => showConnError('Erè koneksyon sèvè a.'));
+}
+
+function showConnError(msg) {
+  document.getElementById('connPanel').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px 0;">
+      <i class="fa-solid fa-circle-exclamation" style="font-size:2rem;color:var(--danger);"></i>
+      <p style="font-size:0.73rem;color:var(--danger);text-align:center;">${msg}</p>
+      <button class="btn btn-ghost" onclick="socket.emit('requestState')">
+        <i class="fa-solid fa-rotate-left"></i> Eseye Ankò
+      </button>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SOCKET EVENTS
+═══════════════════════════════════════════════════════════════ */
+socket.on('qr', url => {
+  connMethod = 'qr';
+  document.getElementById('btnPairing').className = 'method-btn';
+  document.getElementById('btnQR').className      = 'method-btn active';
+  socket.emit('requestState');
+});
+
+socket.on('pairingCode', data => {
+  connMethod = 'pairing';
+  document.getElementById('btnPairing').className = 'method-btn active';
+  document.getElementById('btnQR').className      = 'method-btn';
+  renderConn('connecting', null, data.code, data.phoneNumber);
+});
+
+socket.on('connectionState', data => {
+  setStatus(data.state);
+  socket.emit('requestState');
+});
+
+socket.on('stats', s => {
+  document.getElementById('topMsgs').textContent  = s.messagesProcessed || 0;
+  document.getElementById('topErrors').textContent = s.errors || 0;
+});
+
+socket.on('log', entry => {
+  const term = document.getElementById('terminal');
+  const div  = document.createElement('div');
+  div.className = 'log-line';
+  div.innerHTML = `
+    <span class="log-ts">${new Date(entry.time).toLocaleTimeString()}</span>
+    <span class="log-msg ${entry.level}">${escHtml(entry.msg)}</span>
+  `;
+  term.prepend(div);
+  if (term.children.length > 120) term.lastChild.remove();
+});
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACTIONS
+═══════════════════════════════════════════════════════════════ */
+function logoutBot() {
+  if (!confirm('Dekonekte bot la sou WhatsApp?\n\nSesyon an ap efase. Ou ap bezwen rekonekte.')) return;
+  fetch('/api/logout', { method:'POST' })
+    .then(r => r.json())
+    .then(() => socket.emit('requestState'))
+    .catch(() => socket.emit('requestState'));
+}
+
+function restartBot() {
+  if (!confirm('Rekòmanse sèvè bot la?')) return;
+  fetch('/api/restart', { method:'POST' }).finally(() => {
+    setTimeout(() => location.reload(), 2500);
+  });
+}
+
+function clearLogs() {
+  document.getElementById('terminal').innerHTML = `
+    <div class="log-line">
+      <span class="log-ts">${new Date().toLocaleTimeString()}</span>
+      <span class="log-msg warn">Logs efase pa itilizatè.</span>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COMMANDS TAB
+═══════════════════════════════════════════════════════════════ */
+const CAT_ICONS = {
+  ai: '🤖', downloader: '⬇️', fun: '🎉', group: '👥',
+  media: '🖼️', owner: '👑', tools: '🔧', economy: '💰', default: '📂'
+};
+
+fetch('/api/commands')
+  .then(r => r.json())
+  .then(data => { allCmds = data.categories; renderCmds(data.categories); });
+
+function renderCmds(cats, filter = '') {
+  const box = document.getElementById('cmdsList');
+  let html = '';
+
+  for (const [cat, cmds] of Object.entries(cats)) {
+    const filtered = cmds.filter(c =>
+      c.name.toLowerCase().includes(filter.toLowerCase()) ||
+      c.description.toLowerCase().includes(filter.toLowerCase())
+    );
+    if (!filtered.length) continue;
+
+    const icon = CAT_ICONS[cat.toLowerCase()] || CAT_ICONS.default;
+    const openCls = filter ? 'open' : '';
+
+    html += `
+      <div class="cat-block ${openCls}">
+        <div class="cat-head" onclick="this.parentElement.classList.toggle('open')">
+          <span>${icon} ${cat.toUpperCase()} <span style="font-weight:400;opacity:0.6;">(${filtered.length})</span></span>
+          <i class="fa-solid fa-chevron-down" style="font-size:0.75rem;"></i>
+        </div>
+        <div class="cat-body">
+    `;
+
+    for (const c of filtered) {
+      const alias = c.aliases?.length ? `Alias: .${c.aliases.join(', .')}` : '';
+      html += `
+        <div class="cmd-row">
+          <div class="cmd-name">.${c.name}</div>
+          <div class="cmd-desc">${c.description}</div>
+          ${alias ? `<div class="cmd-alias">${alias}</div>` : ''}
+        </div>
+      `;
+    }
+
+    html += `</div></div>`;
+  }
+
+  box.innerHTML = html || `<div class="loader"><i class="fa-solid fa-ghost"></i><p>Pa gen rezilta.</p></div>`;
+}
+
+function filterCmds() {
+  renderCmds(allCmds, document.getElementById('cmdSearch').value.trim());
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GROUPS TAB
+═══════════════════════════════════════════════════════════════ */
+function loadGroups() {
+  fetch('/api/groups')
+    .then(r => r.json())
+    .then(res => {
+      const box = document.getElementById('groupsList');
+      if (!res.ok || !res.groups?.length) {
+        box.innerHTML = `<p style="text-align:center;color:var(--muted);font-size:0.76rem;padding:20px;">Pa gen gwoup disponib.</p>`;
+        return;
+      }
+      box.innerHTML = res.groups.map(g => `
+        <div class="grp-card">
+          <div>
+            <div class="grp-name">${g.subject}</div>
+            <div class="grp-meta"><i class="fa-solid fa-users"></i> ${g.size} manm · ${g.id.split('@')[0]}</div>
+          </div>
+          <div class="grp-toggles">
+            <button class="grp-btn ${g.botEnabled ? 'on' : 'off'}" onclick="toggleGrp('${g.id}','botEnabled',this)">
+              <i class="fa-solid fa-robot"></i> BOT ${g.botEnabled ? 'ACTIF' : 'INACTIF'}
+            </button>
+            <button class="grp-btn ${g.autoReact ? 'on' : 'off'}" onclick="toggleGrp('${g.id}','autoReact',this)">
+              <i class="fa-solid fa-face-smile"></i> REACT ${g.autoReact ? 'ACTIF' : 'INACTIF'}
             </button>
           </div>
-        `;
-      });
+        </div>
+      `).join('');
+    });
+}
+
+function toggleGrp(id, setting, btn) {
+  fetch('/api/groups/toggle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, setting })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (!res.ok) return;
+    const on = res.newVal;
+    if (setting === 'botEnabled') {
+      btn.className = `grp-btn ${on?'on':'off'}`;
+      btn.innerHTML = `<i class="fa-solid fa-robot"></i> BOT ${on?'ACTIF':'INACTIF'}`;
+    } else {
+      btn.className = `grp-btn ${on?'on':'off'}`;
+      btn.innerHTML = `<i class="fa-solid fa-face-smile"></i> REACT ${on?'ACTIF':'INACTIF'}`;
     }
+  });
+}
 
-    function logoutBot() {
-      if (confirm('Èske ou sèten ou vle dekonekte bot la sou WhatsApp? Sa ap efase sesyon an nèt.')) {
-        fetch('/api/logout', { method: 'POST' })
-          .then(r => r.json())
-          .then(() => {
-            alert('Bot la dekonekte ak siksè!');
-            socket.emit('requestState');
-          });
-      }
-    }
-
-    function restartBot() {
-      if (confirm('Èske ou vle rekòmanse sistèm bot la?')) {
-        fetch('/api/restart', { method: 'POST' })
-          .then(() => {
-            alert('Bot la ap rekòmanse... Dashboard la ap rafrechi lè bot la tounen.');
-            location.reload();
-          });
-      }
-    }
-
-    // Load commands
-    fetch('/api/commands')
-      .then(r => r.json())
-      .then(data => {
-        fullCommandsData = data.categories;
-        renderCmdAccordion(data.categories);
-      });
-
-    function renderCmdAccordion(categories, filter = '') {
-      const container = document.getElementById('commandsScrollList');
-      let html = '';
-
-      for (const [category, cmds] of Object.entries(categories)) {
-        const filtered = cmds.filter(c => 
-          c.name.toLowerCase().includes(filter.toLowerCase()) ||
-          c.description.toLowerCase().includes(filter.toLowerCase())
-        );
-
-        if (filtered.length === 0) continue;
-
-        const openClass = filter ? 'open' : '';
-        html += `
-          <div class="cmd-accordion ` + openClass + `">
-            <div class="cmd-acc-header" onclick="this.parentElement.classList.toggle('open')">
-              <span>📂 ` + category.toUpperCase() + ` (` + filtered.length + `)</span>
-              <i class="fa-solid fa-chevron-down"></i>
-            </div>
-            <div class="cmd-acc-body">
-        `;
-
-        filtered.forEach(c => {
-          const alias = c.aliases && c.aliases.length > 0 ? 'Alias: .' + c.aliases.join(', .') : '';
-          html += `
-            <div class="cmd-item-row">
-              <span class="cmd-item-name">.` + c.name + `</span>
-              <span class="cmd-item-desc">` + c.description + `</span>
-              ` + (alias ? `<span class="cmd-item-desc" style="color:var(--primary); font-size:0.62rem;">` + alias + `</span>` : '') + `
-            </div>
-          `;
-        });
-
-        html += `
-            </div>
-          </div>
-        `;
-      }
-
-      container.innerHTML = html || `<p style="text-align:center; padding:20px; color:var(--text-muted);">Pa gen kòmand ki koresponn.</p>`;
-    }
-
-    function filterCmdList() {
-      const q = document.getElementById('cmdSearch').value.trim();
-      renderCmdAccordion(fullCommandsData, q);
-    }
-
-    // Load participating groups
-    function loadGroupList() {
-      fetch('/api/groups')
-        .then(r => r.json())
-        .then(res => {
-          const container = document.getElementById('groupsScrollList');
-          if (res.ok && res.groups && res.groups.length > 0) {
-            let html = '';
-            res.groups.forEach(g => {
-              const botActive = g.botEnabled ? 'BOT ACTIF' : 'BOT INACTIF';
-              const botActiveCls = g.botEnabled ? 'active' : 'inactive';
-              
-              const react = g.autoReact ? 'REACT ACTIF' : 'REACT INACTIF';
-              const reactCls = g.autoReact ? 'active' : 'inactive';
-              
-              html += `
-                <div class="grp-card">
-                  <div class="grp-main-info">
-                    <div class="grp-name">` + g.subject + `</div>
-                    <div class="grp-meta"><i class="fa-solid fa-users"></i> ` + g.size + ` manm | ID: ` + g.id.split('@')[0] + `</div>
-                  </div>
-                  <div class="grp-switch-row">
-                    <button class="grp-toggle-btn ` + botActiveCls + `" onclick="toggleGrpSetting('` + g.id + `', 'botEnabled', this)">
-                      <i class="fa-solid fa-robot"></i> ` + botActive + `
-                    </button>
-                    <button class="grp-toggle-btn ` + reactCls + `" onclick="toggleGrpSetting('` + g.id + `', 'autoReact', this)">
-                      <i class="fa-solid fa-face-smile"></i> ` + react + `
-                    </button>
-                  </div>
-                </div>
-              `;
-            });
-            container.innerHTML = html;
-          } else {
-            container.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.8rem; padding:20px;">Sistèm nan pa jwenn okenn gwoup kote ou ye.</p>`;
-          }
-        });
-    }
-
-    function toggleGrpSetting(id, setting, el) {
-      fetch('/api/groups/toggle', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, setting })
-      })
-      .then(r => r.json())
-      .then(res => {
-        if (res.ok) {
-          if (setting === 'botEnabled') {
-            el.textContent = res.newVal ? 'BOT ACTIF' : 'BOT INACTIF';
-            el.className = res.newVal ? 'grp-toggle-btn active' : 'grp-toggle-btn inactive';
-          } else if (setting === 'autoReact') {
-            el.textContent = res.newVal ? 'REACT ACTIF' : 'REACT INACTIF';
-            el.className = res.newVal ? 'grp-toggle-btn active' : 'grp-toggle-btn inactive';
-          }
-        } else {
-          alert('Failed to update group setting.');
-        }
-      });
-    }
-
-    // Request state on load
-    socket.emit('requestState');
-    setInterval(() => socket.emit('requestState'), 10000);
-  </script>
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+socket.emit('requestState');
+setInterval(() => socket.emit('requestState'), 10000);
+</script>
 </body>
 </html>
