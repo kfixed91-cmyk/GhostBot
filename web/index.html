@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="ht">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GhostBot - Control Panel</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- Google Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&family=Orbitron:wght=500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --bg: #030a09;
+      --bg-gradient: linear-gradient(135deg, #051412 0%, #010606 100%);
+      --card-bg: rgba(6, 18, 16, 0.7);
+      --border: rgba(0, 210, 255, 0.15);
+      --border-glow: rgba(0, 210, 255, 0.35);
+      --primary: #00d2ff;
+      --primary-glow: rgba(0, 210, 255, 0.4);
+      --success: #10b981;
+      --success-glow: rgba(16, 185, 129, 0.3);
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.3);
+      --text: #f3f4f6;
+      --text-muted: #8e9a98;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      background-image: var(--bg-gradient);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+    /* CORE WRAPPER (MOBILE FIRST AESTHETIC) */
+    .app-phone-container {
+      max-width: 480px;
+      width: 100%;
+      background: rgba(3, 10, 9, 0.9);
+      border: 1px solid rgba(0, 210, 255, 0.2);
+      border-radius: 36px;
+      padding: 24px;
+      backdrop-filter: blur(25px);
+      box-shadow: 0 15px 45px rgba(0, 210, 255, 0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+
+    /* DARK MODE MOON TOGGLE */
+    .moon-toggle {
+      position: absolute;
+      top: 25px;
+      right: 25px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--primary);
+      transition: all 0.3s;
+      z-index: 10;
+    }
+
+    .moon-toggle:hover {
+      background: rgba(0, 210, 255, 0.15);
+      box-shadow: 0 0 12px var(--primary-glow);
+    }
+
+    /* HEADER STATS CARDS */
+    .top-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .stat-mini-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 8px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+    }
+
+    .stat-mini-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
+    }
+
+    .stat-mini-val {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--primary);
+      text-shadow: 0 0 8px var(--primary-glow);
+      margin-bottom: 4px;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .stat-mini-lbl {
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* CENTRAL AVATAR CONTAINER */
+    .avatar-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 10px 0;
+      position: relative;
+    }
+
+    .avatar-glow-ring {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      border-radius: 32px;
+      background: rgba(0, 210, 255, 0.05);
+      border: 1.5px solid rgba(0, 210, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .avatar-glow-ring::after {
+      content: '';
+      position: absolute;
+      width: 156px;
+      height: 156px;
+      border-radius: 38px;
+      border: 1px dashed rgba(0, 210, 255, 0.15);
+      animation: spin 20s linear infinite;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    .bot-photo {
+      width: 110px;
+      height: 110px;
+      border-radius: 24px;
+      border: 2px solid var(--primary);
+      box-shadow: 0 0 25px var(--primary-glow);
+      object-fit: cover;
+    }
+
+    /* BOT NAME */
+    .bot-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 5px;
+      background: linear-gradient(135deg, #fff, var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* STATUS PILL BADGE */
+    .status-pill {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+      padding: 6px 18px;
+      border-radius: 30px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      box-shadow: 0 0 15px var(--success-glow);
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-pill.connecting {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: var(--warning);
+      color: var(--warning);
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+    }
+
+    .status-pill.close {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--danger);
+      color: var(--danger);
+      box-shadow: 0 0 15px var(--danger-glow);
+    }
+
+    .status-pill .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 6px currentColor;
+      animation: pulse 1.5s infinite;
+    }
+
+    /* NAVIGATION TABS (CHAK BAGAY PAJ YO) */
+    .tab-bar-nav {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 6px;
+      margin-bottom: 10px;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .nav-btn i {
+      font-size: 1rem;
+    }
+
+    .nav-btn.active {
+      color: var(--primary);
+      background: rgba(0, 210, 255, 0.08);
+      box-shadow: inset 0 0 10px rgba(0, 210, 255, 0.05);
+    }
+
+    /* TABS DISPLAY SYSTEM */
+    .tab-content {
+      display: none;
+      animation: slideUp 0.35s ease-out forwards;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* DUAL SWITCH BUTTONS (PAIRING vs QR) */
+    .connection-toggle-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 6px;
+      margin-bottom: 10px;
+    }
+
+    .toggle-sub-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .toggle-sub-btn.active {
+      background: var(--primary);
+      color: #000;
+      box-shadow: 0 4px 15px var(--primary-glow);
+    }
+
+    /* INPUTS & LABELS */
+    .input-section-title {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .phone-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 16px 16px 16px 48px;
+      border-radius: 16px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.3s;
+      letter-spacing: 0.5px;
+    }
+
+    .phone-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px var(--primary-glow);
+      background: rgba(0, 210, 255, 0.02);
+    }
+
+    .phone-desc {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      text-align: center;
+      padding: 0 10px;
+    }
+
+    .phone-desc strong {
+      color: var(--primary);
+    }
+
+    /* PRIMARY CYAN BUTTON */
+    .btn-cyan {
+      background: var(--primary);
+      color: #000;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 16px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 5px 20px rgba(0, 210, 255, 0.25);
+      width: 100%;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-cyan:hover {
+      box-shadow: 0 8px 25px var(--primary-glow);
+      transform: translateY(-1px);
+    }
+
+    /* GREEN CHANNEL/ACTION BUTTON */
+    .btn-green {
+      background: #10b981;
+      color: #fff;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 16px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      box-shadow: 0 5px 20px rgba(16, 185, 129, 0.2);
+      width: 100%;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-green:hover {
+      box-shadow: 0 8px 25px var(--success-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+      box-shadow: 0 5px 20px rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-danger:hover {
+      box-shadow: 0 8px 25px var(--danger-glow);
+    }
+
+    /* DYNAMIC QR BOX */
+    .qr-box-inner {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+    }
+
+    /* COMMANDS TAB */
+    .search-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .search-container i {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .search-input-field {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 12px 12px 42px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .search-input-field:focus {
+      border-color: var(--primary);
+    }
+
+    .commands-scroll {
+      max-height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 4px;
+    }
+
+    .cmd-accordion {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.01);
+      overflow: hidden;
+    }
+
+    .cmd-acc-header {
+      background: rgba(0, 210, 255, 0.03);
+      padding: 12px 16px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--primary);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cmd-acc-body {
+      display: none;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.15);
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cmd-accordion.open .cmd-acc-body {
+      display: flex;
+    }
+
+    .cmd-item-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(0, 210, 255, 0.05);
+      padding: 8px 10px;
+      border-radius: 8px;
+    }
+
+    .cmd-item-name {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.78rem;
+    }
+
+    .cmd-item-desc {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    /* GROUPS TAB */
+    .groups-scroll {
+      max-height: 420px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 4px;
+    }
+
+    .grp-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .grp-name {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .grp-meta {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .grp-switch-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .grp-toggle-btn {
+      padding: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .grp-toggle-btn.active {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .grp-toggle-btn.inactive {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    /* TERMINAL LOGS */
+    .term-box {
+      background: #010404;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 0.72rem;
+      height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 4px;
+    }
+
+    .term-line {
+      display: flex;
+      gap: 10px;
+    }
+
+    .term-ts {
+      color: #00d2ff;
+      flex-shrink: 0;
+    }
+
+    .term-msg { word-break: break-all; }
+    .term-msg.success { color: var(--success); }
+    .term-msg.error { color: var(--danger); }
+    .term-msg.warn { color: var(--warning); }
+    .term-msg.info { color: #cbd5e1; }
+
+    /* LOADER overlay */
+    .loader-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0;
+      color: var(--primary);
+    }
+
+    .loader-box i {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-phone-container">
+    <!-- MOON DECORATION -->
+    <div class="moon-toggle">
+      <i class="fa-solid fa-moon"></i>
+    </div>
+
+    <!-- HEADER STATS -->
+    <div class="top-stats-row">
+      <div class="stat-mini-card">
+        <div class="stat-mini-val" id="topUptime">0s</div>
+        <div class="stat-mini-lbl" id="lblUptime">ACTIF</div>
+      </div>
+      <div class="stat-mini-card">
+        <div class="stat-mini-val" id="topMsgs">0</div>
+        <div class="stat-mini-lbl">MESAJ</div>
+      </div>
+      <div class="stat-mini-card">
+        <div class="stat-mini-val" id="topErrors">0</div>
+        <div class="stat-mini-lbl">ERÈ</div>
+      </div>
+    </div>
+
+    <!-- AVATAR PROFILE BLOCK -->
+    <div class="avatar-wrapper">
+      <div class="avatar-glow-ring">
+        <img src="/src/assets/ghostbot.png" id="botAvatarPhoto" class="bot-photo" onerror="this.src='https://placehold.co/110/051412/00d2ff?text=GhostBot'">
+      </div>
+      <h2 class="bot-title" id="lblBotName">GhostBot</h2>
+      
+      <!-- ONLINE STATUS CAPSULE -->
+      <div id="statusCapsule" class="status-pill connecting">
+        <span class="pulse-dot"></span>
+        <span id="statusCapsuleText">KONEKTE...</span>
+      </div>
+    </div>
+
+    <!-- CORE TAB NAVIGATION -->
+    <nav class="tab-bar-nav">
+      <button class="nav-btn active" onclick="switchNavTab('home')">
+        <i class="fa-solid fa-qrcode"></i>
+        <span>Koneksyon</span>
+      </button>
+      <button class="nav-btn" onclick="switchNavTab('commands')">
+        <i class="fa-solid fa-list"></i>
+        <span>Kòmand yo</span>
+      </button>
+      <button class="nav-btn" onclick="switchNavTab('groups')">
+        <i class="fa-solid fa-users"></i>
+        <span>Gwoup yo</span>
+      </button>
+      <button class="nav-btn" onclick="switchNavTab('logs')">
+        <i class="fa-solid fa-terminal"></i>
+        <span>Logs</span>
+      </button>
+    </nav>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- TAB: HOME / KONEKSYON -->
+    <!-- ────────────────────────────────────────── -->
+    <div id="view-home" class="tab-content active">
+      <!-- SELECT CONNECTION METHOD -->
+      <div class="connection-toggle-container" id="connToggleRow">
+        <button class="toggle-sub-btn active" id="btnModePairing" onclick="setConnectionMethod('pairing')">
+          <i class="fa-solid fa-mobile-screen-button"></i> Pairing Code
+        </button>
+        <button class="toggle-sub-btn" id="btnModeQR" onclick="setConnectionMethod('qr')">
+          <i class="fa-solid fa-qrcode"></i> QR Code
+        </button>
+      </div>
+
+      <!-- MAIN CONNECTION CARD (DYNAMICS CHANGE BASED ON WA STATUS) -->
+      <div id="connectionPanel">
+        <!-- Default loader -->
+        <div class="loader-box">
+          <i class="fa-solid fa-circle-notch fa-spin"></i>
+          <p>Ap chaje koneksyon sistèm lan...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- TAB: COMMANDS -->
+    <!-- ────────────────────────────────────────── -->
+    <div id="view-commands" class="tab-content">
+      <div class="search-container">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="cmdSearch" class="search-input-field" placeholder="Chèche yon kòmand pa non..." oninput="filterCmdList()">
+      </div>
+      
+      <div class="commands-scroll" id="commandsScrollList">
+        <p style="text-align:center; padding:20px; color:var(--text-muted);">Ap chaje kòmand yo...</p>
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- TAB: GROUPS -->
+    <!-- ────────────────────────────────────────── -->
+    <div id="view-groups" class="tab-content">
+      <p id="grpOfflineMsg" style="text-align:center; padding:40px 10px; color:var(--text-muted); font-size:0.8rem; line-height:1.4;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size:2rem; color:var(--primary); display:block; margin-bottom:12px;"></i>
+        Ou dwe konekte bot la sou WhatsApp anvan pou w ka jere gwoup yo!
+      </p>
+      <div class="groups-scroll" id="groupsScrollList" style="display:none;">
+        <!-- Group cards -->
+      </div>
+    </div>
+
+    <!-- ────────────────────────────────────────── -->
+    <!-- TAB: LOGS -->
+    <!-- ────────────────────────────────────────── -->
+    <div id="view-logs" class="tab-content">
+      <div class="term-box" id="termLogsBox">
+        <div class="term-line">
+          <span class="term-ts">--:--:--</span>
+          <span class="term-msg info">Konekte sou tèminal sèvè...</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const socket = io();
+    let uptimeSeconds = 0;
+    let uptimeInt = null;
+    let connectionMethod = 'pairing'; // default 'pairing' oswa 'qr'
+    let fullCommandsData = {};
+
+    function switchNavTab(tabId) {
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+      event.currentTarget.classList.add('active');
+      document.getElementById('view-' + tabId).classList.add('active');
+    }
+
+    function setConnectionMethod(method) {
+      connectionMethod = method;
+      document.getElementById('btnModePairing').className = method === 'pairing' ? 'toggle-sub-btn active' : 'toggle-sub-btn';
+      document.getElementById('btnModeQR').className = method === 'qr' ? 'toggle-sub-btn active' : 'toggle-sub-btn';
+      socket.emit('requestState');
+    }
+
+    function formatTime(sec) {
+      const d = Math.floor(sec / 86400);
+      const h = Math.floor((sec % 86400) / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      if (d > 0) return d + 'j ' + h + 'è';
+      if (h > 0) return h + 'è ' + m + 'm';
+      if (m > 0) return m + 'm ' + s + 's';
+      return s + 'sek';
+    }
+
+    function setCapsuleStatus(status) {
+      const badge = document.getElementById('statusCapsule');
+      const text = document.getElementById('statusCapsuleText');
+      badge.className = 'status-pill ' + status;
+      
+      const labels = {
+        online: 'SYSTEM SOU ENTÈNÈT',
+        connecting: 'KONEKTE SÈVÈ...',
+        close: 'BOT DEKONEKTE',
+        qr: 'PARE POU SCAN'
+      };
+      
+      text.textContent = labels[status] || status.toUpperCase();
+    }
+
+    // Socket: General state update listener
+    socket.on('state', (data) => {
+      setCapsuleStatus(data.connection);
+      
+      // Update top stats
+      document.getElementById('topMsgs').textContent = data.stats?.messagesProcessed || 0;
+      document.getElementById('topErrors').textContent = data.stats?.errors || 0;
+      document.getElementById('lblBotName').textContent = data.config?.BOT_NAME || 'GhostBot';
+
+      if (data.uptime) {
+        clearInterval(uptimeInt);
+        uptimeSeconds = data.uptime;
+        document.getElementById('topUptime').textContent = formatTime(uptimeSeconds);
+        uptimeInt = setInterval(() => {
+          uptimeSeconds++;
+          document.getElementById('topUptime').textContent = formatTime(uptimeSeconds);
+        }, 1000);
+      }
+
+      // Populate Connection Views
+      renderConnectionFlow(data.connection, data.qr, data.pairingCode, data.phoneNumber);
+
+      // Load Groups list if bot is connected
+      if (data.connection === 'online' || data.connection === 'open') {
+        document.getElementById('grpOfflineMsg').style.display = 'none';
+        document.getElementById('groupsScrollList').style.display = 'flex';
+        loadGroupList();
+      } else {
+        document.getElementById('grpOfflineMsg').style.display = 'block';
+        document.getElementById('groupsScrollList').style.display = 'none';
+      }
+    });
+
+    function renderConnectionFlow(status, qrCode, pairingCode, phoneNumber) {
+      const panel = document.getElementById('connectionPanel');
+      const toggleRow = document.getElementById('connToggleRow');
+
+      if (status === 'open' || status === 'online') {
+        // Connected View
+        toggleRow.style.display = 'none';
+        panel.innerHTML = `
+          <div style="display:flex; flex-direction:column; align-items:center; gap:12px; margin:20px 0;">
+            <i class="fa-solid fa-circle-check" style="font-size:3rem; color:var(--success); text-shadow:0 0 20px var(--success-glow)"></i>
+            <h3 style="font-weight:800; font-size:1.15rem; color:#fff;">SOU ENTÈNÈT AK SIKSE!</h3>
+            <p style="font-size:0.75rem; color:var(--text-muted); text-align:center;">Bot la konekte sou kont WhatsApp ou epi li pare pou l jere tout kòmand.</p>
+          </div>
+          
+          <button class="btn-cyan btn-danger" onclick="logoutBot()"><i class="fa-solid fa-power-off"></i> DEKONEKTE BOT LA</button>
+        `;
+      } else {
+        toggleRow.style.display = 'grid';
+
+        if (connectionMethod === 'pairing') {
+          // Pairing mode View
+          let innerContent = '';
+          if (pairingCode) {
+            innerContent = `
+              <div class="pairing-code-box" style="margin: 10px auto; width:100%;">
+                <div class="pairing-code-number">` + pairingCode + `</div>
+                <p class="pairing-code-desc">Mete kòd sa a nan WhatsApp (Link a Device) pou nimewo: <strong>+` + phoneNumber + `</strong></p>
+              </div>
+            `;
+          } else {
+            innerContent = `
+              <h3 class="input-section-title">ENTREZ LE NUMÉRO AVEC L'INDICATIF</h3>
+              
+              <div class="input-wrapper" style="margin-bottom:12px;">
+                <i class="fa-solid fa-globe"></i>
+                <input type="text" id="phoneInputNumber" class="phone-input" placeholder="e.g. 50955394345" value="` + (phoneNumber || '') + `">
+              </div>
+              
+              <p class="phone-desc" style="margin-bottom:20px;">Use your WhatsApp number with country code only. Example: <strong>50955394345</strong></p>
+              
+              <button class="btn-cyan" onclick="requestPairing()"><i class="fa-solid fa-bolt"></i> GÉNÉRER LE CODE</button>
+            `;
+          }
+
+          panel.innerHTML = innerContent;
+        } else {
+          // QR Code mode View
+          panel.innerHTML = `
+            <div class="qr-box-inner" style="margin-bottom:15px;">
+              <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:15px;">Eskane kòd QR la sou WhatsApp nan Linked Devices:</p>
+              <div class="qr-container">
+                <img src="` + (qrCode || 'https://placehold.co/180?text=Konekte...') + `" alt="QR Code">
+              </div>
+            </div>
+            <button class="btn-cyan btn-outline" style="border-color:var(--border)" onclick="restartBot()"><i class="fa-solid fa-arrows-rotate"></i> REKÒMANSE BOT LA</button>
+          `;
+        }
+      }
+    }
+
+    // Socket Event listeners
+    socket.on('qr', (url) => {
+      connectionMethod = 'qr';
+      document.getElementById('btnModePairing').className = 'toggle-sub-btn';
+      document.getElementById('btnModeQR').className = 'toggle-sub-btn active';
+      socket.emit('requestState');
+    });
+
+    socket.on('pairingCode', (data) => {
+      connectionMethod = 'pairing';
+      document.getElementById('btnModePairing').className = 'toggle-sub-btn active';
+      document.getElementById('btnModeQR').className = 'toggle-sub-btn';
+      renderConnectionFlow('connecting', null, data.code, data.phoneNumber);
+    });
+
+    socket.on('connectionState', (data) => {
+      setCapsuleStatus(data.state);
+      socket.emit('requestState');
+    });
+
+    socket.on('stats', (stats) => {
+      document.getElementById('topMsgs').textContent = stats.messagesProcessed || 0;
+      document.getElementById('topErrors').textContent = stats.errors || 0;
+    });
+
+    socket.on('log', (entry) => {
+      const container = document.getElementById('termLogsBox');
+      const time = new Date(entry.time).toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = 'term-line';
+      div.innerHTML = `
+        <span class="term-ts">` + time + `</span>
+        <span class="term-msg ` + entry.level + `">` + entry.msg + `</span>
+      `;
+      container.prepend(div);
+      
+      if (container.children.length > 100) container.lastChild.remove();
+    });
+
+    // API Interactions
+    function requestPairing() {
+      const input = document.getElementById('phoneInputNumber');
+      const phone = input ? input.value.trim() : '';
+      if (!phone) return alert('Tanpri mete nimewo WhatsApp ou ak kòd peyi san espas (egz: 50955394345)!');
+
+      document.getElementById('connectionPanel').innerHTML = `
+        <div class="loader-box">
+          <i class="fa-solid fa-circle-notch fa-spin"></i>
+          <p>N ap mande WhatsApp kòd koneksyon an... Tann tanpri...</p>
+        </div>
+      `;
+
+      fetch('/api/pairing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNumber: phone })
+      })
+      .then(res => res.json())
+      .then(d => {
+        if (!d.ok) {
+          alert('Erè: ' + d.msg);
+          socket.emit('requestState');
+        }
+      })
+      .catch(e => {
+        alert('Erè koneksyon.');
+        socket.emit('requestState');
+      });
+    }
+
+    function logoutBot() {
+      if (confirm('Èske ou sèten ou vle dekonekte bot la sou WhatsApp? Sa ap efase sesyon an nèt.')) {
+        fetch('/api/logout', { method: 'POST' })
+          .then(r => r.json())
+          .then(() => {
+            alert('Bot la dekonekte ak siksè!');
+            socket.emit('requestState');
+          });
+      }
+    }
+
+    function restartBot() {
+      if (confirm('Èske ou vle rekòmanse sistèm bot la?')) {
+        fetch('/api/restart', { method: 'POST' })
+          .then(() => {
+            alert('Bot la ap rekòmanse... Dashboard la ap rafrechi lè bot la tounen.');
+            location.reload();
+          });
+      }
+    }
+
+    // Load commands
+    fetch('/api/commands')
+      .then(r => r.json())
+      .then(data => {
+        fullCommandsData = data.categories;
+        renderCmdAccordion(data.categories);
+      });
+
+    function renderCmdAccordion(categories, filter = '') {
+      const container = document.getElementById('commandsScrollList');
+      let html = '';
+
+      for (const [category, cmds] of Object.entries(categories)) {
+        const filtered = cmds.filter(c => 
+          c.name.toLowerCase().includes(filter.toLowerCase()) ||
+          c.description.toLowerCase().includes(filter.toLowerCase())
+        );
+
+        if (filtered.length === 0) continue;
+
+        const openClass = filter ? 'open' : '';
+        html += `
+          <div class="cmd-accordion ` + openClass + `">
+            <div class="cmd-acc-header" onclick="this.parentElement.classList.toggle('open')">
+              <span>📂 ` + category.toUpperCase() + ` (` + filtered.length + `)</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </div>
+            <div class="cmd-acc-body">
+        `;
+
+        filtered.forEach(c => {
+          const alias = c.aliases && c.aliases.length > 0 ? 'Alias: .' + c.aliases.join(', .') : '';
+          html += `
+            <div class="cmd-item-row">
+              <span class="cmd-item-name">.` + c.name + `</span>
+              <span class="cmd-item-desc">` + c.description + `</span>
+              ` + (alias ? `<span class="cmd-item-desc" style="color:var(--primary); font-size:0.62rem;">` + alias + `</span>` : '') + `
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html || `<p style="text-align:center; padding:20px; color:var(--text-muted);">Pa gen kòmand ki koresponn.</p>`;
+    }
+
+    function filterCmdList() {
+      const q = document.getElementById('cmdSearch').value.trim();
+      renderCmdAccordion(fullCommandsData, q);
+    }
+
+    // Load participating groups
+    function loadGroupList() {
+      fetch('/api/groups')
+        .then(r => r.json())
+        .then(res => {
+          const container = document.getElementById('groupsScrollList');
+          if (res.ok && res.groups && res.groups.length > 0) {
+            let html = '';
+            res.groups.forEach(g => {
+              const botActive = g.botEnabled ? 'BOT ACTIF' : 'BOT INACTIF';
+              const botActiveCls = g.botEnabled ? 'active' : 'inactive';
+              
+              const react = g.autoReact ? 'REACT ACTIF' : 'REACT INACTIF';
+              const reactCls = g.autoReact ? 'active' : 'inactive';
+              
+              html += `
+                <div class="grp-card">
+                  <div class="grp-main-info">
+                    <div class="grp-name">` + g.subject + `</div>
+                    <div class="grp-meta"><i class="fa-solid fa-users"></i> ` + g.size + ` manm | ID: ` + g.id.split('@')[0] + `</div>
+                  </div>
+                  <div class="grp-switch-row">
+                    <button class="grp-toggle-btn ` + botActiveCls + `" onclick="toggleGrpSetting('` + g.id + `', 'botEnabled', this)">
+                      <i class="fa-solid fa-robot"></i> ` + botActive + `
+                    </button>
+                    <button class="grp-toggle-btn ` + reactCls + `" onclick="toggleGrpSetting('` + g.id + `', 'autoReact', this)">
+                      <i class="fa-solid fa-face-smile"></i> ` + react + `
+                    </button>
+                  </div>
+                </div>
+              `;
+            });
+            container.innerHTML = html;
+          } else {
+            container.innerHTML = `<p style="text-align:center; color:var(--text-muted); font-size:0.8rem; padding:20px;">Sistèm nan pa jwenn okenn gwoup kote ou ye.</p>`;
+          }
+        });
+    }
+
+    function toggleGrpSetting(id, setting, el) {
+      fetch('/api/groups/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, setting })
+      })
+      .then(r => r.json())
+      .then(res => {
+        if (res.ok) {
+          if (setting === 'botEnabled') {
+            el.textContent = res.newVal ? 'BOT ACTIF' : 'BOT INACTIF';
+            el.className = res.newVal ? 'grp-toggle-btn active' : 'grp-toggle-btn inactive';
+          } else if (setting === 'autoReact') {
+            el.textContent = res.newVal ? 'REACT ACTIF' : 'REACT INACTIF';
+            el.className = res.newVal ? 'grp-toggle-btn active' : 'grp-toggle-btn inactive';
+          }
+        } else {
+          alert('Failed to update group setting.');
+        }
+      });
+    }
+
+    // Request state on load
+    socket.emit('requestState');
+    setInterval(() => socket.emit('requestState'), 10000);
+  </script>
+</body>
+</html>

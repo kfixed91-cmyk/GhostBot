@@ -1,0 +1,9 @@
+node_modules/
+session/
+src/database/users.json
+src/database/groups.json
+src/database/premium.json
+src/database/settings.json
+src/database/economy.json
+.env
+.DS_Store

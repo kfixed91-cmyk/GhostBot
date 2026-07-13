@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: GhostBot
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: node main.js
+    healthCheckPath: /api/state
+    disk:
+      name: ghostbot-data
+      mountPath: /opt/render/project/src/session
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: REMOVEBG_API_KEY
+        sync: false
+      - key: OPENWEATHER_API_KEY
+        sync: false
+      - key: OCR_API_KEY
+        sync: false
