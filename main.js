@@ -163,7 +163,7 @@ app.post("/api/logout", (req, res) => {
 
   global.__BOT_STATE.connection = "close";
   global.__BOT_STATE.qr = null;
-  global.__BOT_STATE.pairingCode = null;
+  global.__BOT_MPTE.pairingCode = null;
   global.__BOT_STATE.userJid = null;
   global.__BOT_STATE.userName = null;
 
@@ -308,7 +308,7 @@ async function startBot() {
       version,
       auth: state,
       printQRInTerminal: !usePairing,
-      browser: ["Chrome (Linux)", "", ""],
+      browser: Browsers.ubuntu("Chrome"),
       logger: pino({ level: "silent" }),
       defaultQueryTimeoutMs: undefined,
       connectTimeoutMs: undefined,
@@ -341,7 +341,7 @@ async function startBot() {
           addLog("info", `Requesting pairing code for +${cleanPhone}`);
           try {
             // Small delay to ensure WebSocket is fully initialized
-            await new Promise(r => setTimeout(r, 1500));
+            await new Promise(r => setTimeout(r, 800));
             const code = await sock.requestPairingCode(cleanPhone);
             global.__BOT_STATE.pairingCode = code;
             global.__BOT_STATE.phoneNumber = cleanPhone;
@@ -372,7 +372,7 @@ async function startBot() {
       if (connection === "open") {
         global.__BOT_STATE.connection = "open";
         global.__BOT_STATE.qr = null;
-        global.__BOT_MPTE.pairingCode = null;
+        global.__BOT_STATE.pairingCode = null;
         global.__BOT_STATE.phoneNumber = null; // clear — never keep number in memory
         global.__BOT_STATE.userJid = sock.user?.id;
         global.__BOT_STATE.userName = sock.user?.name;
