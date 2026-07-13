@@ -632,7 +632,7 @@
 
     .search-field:focus { border-color: var(--primary); }
 
-    .cmds-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 2px; }
+    .cmds-list { display: flex; flex-direction: column; gap: 10px; padding-right: 2px; }
 
     .cat-block { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
 
@@ -1287,6 +1287,9 @@ socket.on('pairingCode', data => {
   connMethod = 'pairing';
   document.getElementById('btnPairing').className = 'method-btn active';
   document.getElementById('btnQR').className      = 'method-btn';
+  // Auto-switch to connect tab so user sees code immediately
+  goTab(document.querySelector('[data-tab=connect]'), 'connect');
+  document.getElementById('methodRow').style.display = 'grid';
   renderConn('connecting', null, data.code, data.phoneNumber);
 });
 
@@ -1367,10 +1370,10 @@ function renderCmds(cats, filter = '') {
     if (!filtered.length) continue;
 
     const icon = CAT_ICONS[cat.toLowerCase()] || CAT_ICONS.default;
-    const openCls = filter ? 'open' : '';
+    // All categories open by default
 
     html += `
-      <div class="cat-block ${openCls}">
+      <div class="cat-block open">
         <div class="cat-head" onclick="this.parentElement.classList.toggle('open')">
           <span>${icon} ${cat.toUpperCase()} <span style="font-weight:400;opacity:0.6;">(${filtered.length})</span></span>
           <i class="fa-solid fa-chevron-down" style="font-size:0.75rem;"></i>
