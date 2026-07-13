@@ -163,7 +163,7 @@ app.post("/api/logout", (req, res) => {
 
   global.__BOT_STATE.connection = "close";
   global.__BOT_STATE.qr = null;
-  global.__BOT_MPTE.pairingCode = null;
+  global.__BOT_STATE.pairingCode = null;
   global.__BOT_STATE.userJid = null;
   global.__BOT_STATE.userName = null;
 
@@ -310,8 +310,6 @@ async function startBot() {
       printQRInTerminal: !usePairing,
       browser: Browsers.ubuntu("Chrome"),
       logger: pino({ level: "silent" }),
-      defaultQueryTimeoutMs: undefined,
-      connectTimeoutMs: undefined,
       keepAliveIntervalMs: 30000,
       emitOwnEvents: true,
       markOnlineOnConnect: config.ALWAYS_ONLINE,
