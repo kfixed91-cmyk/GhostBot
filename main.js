@@ -312,40 +312,47 @@ async function startBot() {
 
     global.__sock = sock;
 
+    // Normalize phone number: digits only, no + or spaces
+    const cleanPhone = phoneNumber ? phoneNumber.replace(/\D/g, "") : null;
+
     sock.ev.on("creds.update", saveCreds);
 
-    // ── Handle Pairing Code ──────────────────────────────────
-    if (usePairing && phoneNumber && !sock.authState.creds.registered) {
-      addLog("info", `Requesting pairing code for +${phoneNumber}`);
-      try {
-        // Small delay required by Baileys before requesting pairing code
-        await new Promise((r) => setTimeout(r, 3000));
-        const code = await sock.requestPairingCode(phoneNumber);
-        global.__BOT_STATE.pairingCode = code;
-        global.__BOT_STATE.phoneNumber = phoneNumber;
-        io.emit("pairingCode", { code, phoneNumber });
-        addLog("success", `Pairing code: ${code}`);
-        console.log(chalk.green.bold(`\n📱 PAIRING CODE: ${chalk.yellow.bold(code)}\n`));
-      } catch (e) {
-        addLog("error", `Pairing error: ${e.message}`);
-        // Notify dashboard so user sees the error instead of infinite spinner
-        io.emit("pairingError", { msg: e.message });
-      }
-    }
+    // Track whether we already requested a pairing code this session
+    let pairingRequested = false;
 
     // ── Connection Updates ──────────────────────────────────
-    sock.ev.on("connection.update", (update) => {
+    sock.ev.on("connection.update", async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        QRCode.toDataURL(qr, (err, url) => {
-          if (!err) {
-            global.__BOT_STATE.qr = url;
-            global.__BOT_STATE.connection = "qr";
-            io.emit("qr", url);
-            addLog("info", "QR Code generated — scan with WhatsApp");
+        if (usePairing && cleanPhone && !sock.authState.creds.registered && !pairingRequested) {
+          // ── Pairing Code path ─────────────────────────────
+          // Call requestPairingCode HERE — inside qr event — because this fires
+          // exactly when Baileys has connected to WS servers and is ready for auth.
+          pairingRequested = true;
+          addLog("info", `Requesting pairing code for +${cleanPhone}`);
+          try {
+            const code = await sock.requestPairingCode(cleanPhone);
+            global.__BOT_STATE.pairingCode = code;
+            global.__BOT_STATE.phoneNumber = cleanPhone;
+            io.emit("pairingCode", { code, phoneNumber: cleanPhone });
+            addLog("success", `Pairing code ready: ${code}`);
+            console.log(chalk.green.bold(`\n📱 PAIRING CODE: ${chalk.yellow.bold(code)}\n`));
+          } catch (e) {
+            addLog("error", `Pairing code error: ${e.message}`);
+            io.emit("pairingError", { msg: e.message });
           }
-        });
+        } else {
+          // ── QR Code path ─────────────────────────────────
+          QRCode.toDataURL(qr, (err, url) => {
+            if (!err) {
+              global.__BOT_STATE.qr = url;
+              global.__BOT_STATE.connection = "qr";
+              io.emit("qr", url);
+              addLog("info", "QR Code generated — scan with WhatsApp");
+            }
+          });
+        }
       }
 
       if (connection === "open") {

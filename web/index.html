@@ -1148,17 +1148,19 @@ function renderConn(status, qr, pairingCode, phone) {
 }
 
 function buildPairingCodeUI(code, phone) {
-  const raw   = code.replace(/-/g,'');
-  const p1    = raw.slice(0,4);
-  const p2    = raw.slice(4,8);
-  let digits  = '';
-  let delay   = 0;
+  // Raw 8-char code — strip any dashes Baileys may include
+  const raw  = code.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  const p1   = raw.slice(0, 4);
+  const p2   = raw.slice(4, 8);
+  const clean = p1 + p2; // what user must type in WhatsApp — no dash
 
+  let digits = '';
+  let delay  = 0;
   for (const ch of p1) {
     digits += `<div class="code-block" style="animation-delay:${delay}ms">${ch}</div>`;
     delay += 80;
   }
-  digits += `<div class="code-block sep" style="animation-delay:${delay}ms; opacity:0; animation:popUp 0.3s ${delay}ms ease forwards">—</div>`;
+  digits += `<div class="code-block sep" style="animation-delay:${delay}ms;opacity:0;animation:popUp 0.3s ${delay}ms ease forwards">—</div>`;
   delay  += 60;
   for (const ch of p2) {
     digits += `<div class="code-block" style="animation-delay:${delay}ms">${ch}</div>`;
@@ -1167,22 +1169,33 @@ function buildPairingCodeUI(code, phone) {
 
   return `
     <div style="display:flex;flex-direction:column;gap:14px;align-items:center;">
-      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:1px;font-weight:700;text-transform:uppercase;">
-        📱 Kòd pou +${phone || ''}
+
+      <!-- WhatsApp notification banner -->
+      <div style="
+        width:100%;background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.35);
+        border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+        <i class="fa-brands fa-whatsapp" style="font-size:1.4rem;color:#25d366;flex-shrink:0;"></i>
+        <div>
+          <p style="font-size:0.72rem;font-weight:700;color:#25d366;margin:0;">WhatsApp voye yon notifikasyon sou +${phone || ''}</p>
+          <p style="font-size:0.66rem;color:var(--muted);margin:2px 0 0;">Ouvri notifikasyon an epi tape kòd la — oswa swiv etap yo anba a.</p>
+        </div>
+      </div>
+
+      <p style="font-size:0.68rem;color:var(--muted);letter-spacing:1px;font-weight:700;text-transform:uppercase;margin:0;">
+        Kòd ou a
       </p>
 
       <div class="code-reveal">${digits}</div>
 
-      <button class="btn btn-copy" id="btnCopy" onclick="doCopy('${code}')">
+      <button class="btn btn-copy" id="btnCopy" onclick="doCopy('${clean}')">
         <i class="fa-regular fa-copy"></i> KOPYE KÒD LA
       </button>
 
       <div class="card" style="width:100%;padding:14px;">
         <div class="steps">
-          <div class="step"><div class="step-n">1</div><div>Ouvri <strong style="color:#fff">WhatsApp</strong> sou telefòn ou</div></div>
-          <div class="step"><div class="step-n">2</div><div>Ale nan <strong style="color:#fff">Paramèt → Aparèy konekte → Konekte yon aparèy</strong></div></div>
-          <div class="step"><div class="step-n">3</div><div>Chwazi <strong style="color:#fff">"Konekte ak nimewo telefòn"</strong></div></div>
-          <div class="step"><div class="step-n">4</div><div>Tape kòd la: <strong style="color:var(--primary)">${code}</strong></div></div>
+          <div class="step"><div class="step-n">1</div><div>Ouvri <strong style="color:#fff">WhatsApp</strong> → tape sou notifikasyon an <em style="color:var(--muted)">"Enter code to link new device"</em></div></div>
+          <div class="step"><div class="step-n">2</div><div>Oswa ale nan <strong style="color:#fff">Paramèt → Aparèy konekte → Konekte yon aparèy → Konekte ak nimewo</strong></div></div>
+          <div class="step"><div class="step-n">3</div><div>Tape kòd <strong style="color:var(--primary);font-size:1rem;letter-spacing:2px;">${p1}-${p2}</strong> — ekri li egzak jan ou wè l la</div></div>
         </div>
       </div>
 
