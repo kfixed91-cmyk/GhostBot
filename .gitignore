@@ -7,3 +7,4 @@ src/database/settings.json
 src/database/economy.json
 .env
 .DS_Store
+*.log

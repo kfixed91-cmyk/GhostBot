@@ -26,8 +26,16 @@ const QRCode = require("qrcode");
 
 const config = require("./config");
 const { messageHandler } = require("./src/handler/message");
-const { ensureDB } = require("./src/lib/database");
+const { ensureDB, readDB, getBotSetting } = require("./src/lib/database");
 const { loadCommands, getAllCommands } = require("./src/handler/commandHandler");
+
+// ═══════════════════════════════════════════════════════════════
+// LOAD PERSISTED SETTINGS (e.g. mode changed via .mode command)
+// ═══════════════════════════════════════════════════════════════
+
+ensureDB();
+const savedMode = getBotSetting("botMode");
+if (savedMode) config.MODE = savedMode;
 
 // ═══════════════════════════════════════════════════════════════
 // GLOBAL STATE (shared with dashboard)
@@ -35,13 +43,13 @@ const { loadCommands, getAllCommands } = require("./src/handler/commandHandler")
 
 global.__BOT_START_TIME = Date.now();
 global.__BOT_STATE = {
-  connection: "connecting", // connecting | open | close | qr
-  qr: null,                // QR code data URL (base64 PNG)
-  pairingCode: null,       // pairing code if using that method
-  phoneNumber: null,       // phone for pairing
-  userJid: null,           // bot's own JID
-  userName: null,          // bot's WhatsApp name
-  logs: [],                // recent log entries [{time, level, msg}]
+  connection: "connecting",
+  qr: null,
+  pairingCode: null,
+  phoneNumber: null,
+  userJid: null,
+  userName: null,
+  logs: [],
   stats: {
     messagesProcessed: 0,
     commandsExecuted: 0,
@@ -57,7 +65,7 @@ function addLog(level, msg) {
   if (global.__io) global.__io.emit("log", entry);
 }
 
-// Override console.log to capture logs
+// Override console.log to capture logs for the dashboard
 const origLog = console.log;
 const origError = console.error;
 console.log = (...args) => {
@@ -88,7 +96,6 @@ app.use(express.json());
 app.get("/api/state", (req, res) => {
   res.json({
     ...global.__BOT_STATE,
-    qr: global.__BOT_STATE.qr,
     config: {
       BOT_NAME: config.BOT_NAME,
       OWNER_NAME: config.OWNER_NAME,
@@ -107,21 +114,21 @@ app.post("/api/restart", (req, res) => {
   setTimeout(() => process.exit(1), 1000);
 });
 
-// API: Get pairing code (clears session and restarts in pairing mode)
+// API: Request pairing code (clears session and restarts in pairing mode)
 app.post("/api/pairing", (req, res) => {
   const { phoneNumber } = req.body;
   if (!phoneNumber) return res.json({ ok: false, msg: "Missing phone number" });
-  
+
   global.__MANUAL_DISCONNECT = true;
 
   if (global.__sock) {
-    try { global.__sock.end(); } catch(e){}
+    try { global.__sock.end(); } catch (e) {}
   }
 
   try {
     fs.removeSync(config.SESSION_DIR);
     fs.ensureDirSync(config.SESSION_DIR);
-  } catch(e){}
+  } catch (e) {}
 
   global.__BOT_STATE.phoneNumber = phoneNumber;
   global.__BOT_STATE.pairingCode = null;
@@ -144,13 +151,13 @@ app.post("/api/logout", (req, res) => {
   global.__MANUAL_DISCONNECT = true;
 
   if (global.__sock) {
-    try { global.__sock.end(); } catch(e){}
+    try { global.__sock.end(); } catch (e) {}
   }
 
   try {
     fs.removeSync(config.SESSION_DIR);
     fs.ensureDirSync(config.SESSION_DIR);
-  } catch(e){}
+  } catch (e) {}
 
   global.__BOT_STATE.connection = "close";
   global.__BOT_STATE.qr = null;
@@ -173,12 +180,16 @@ app.get("/api/commands", (req, res) => {
   const cats = {};
   for (const cmd of all) {
     if (!cats[cmd.category]) cats[cmd.category] = [];
-    cats[cmd.category].push({ name: cmd.name, aliases: cmd.aliases, description: cmd.description });
+    cats[cmd.category].push({
+      name: cmd.name,
+      aliases: cmd.aliases,
+      description: cmd.description,
+    });
   }
   res.json({ total: all.length, categories: cats });
 });
 
-// API: Get all groups (active/inactive and auto-react settings)
+// API: Get all groups the bot is in
 app.get("/api/groups", async (req, res) => {
   if (global.__BOT_STATE.connection !== "open" || !global.__sock) {
     return res.json({ ok: false, msg: "Bot not connected to WhatsApp yet", groups: [] });
@@ -186,8 +197,9 @@ app.get("/api/groups", async (req, res) => {
   try {
     const sock = global.__sock;
     const groups = await sock.groupFetchAllParticipating();
-    const groupList = Object.values(groups).map(g => {
-      const settings = require("./src/lib/database").getGroupSettings(g.id);
+    const { getGroupSettings } = require("./src/lib/database");
+    const groupList = Object.values(groups).map((g) => {
+      const settings = getGroupSettings(g.id);
       return {
         id: g.id,
         subject: g.subject,
@@ -204,18 +216,17 @@ app.get("/api/groups", async (req, res) => {
 
 // API: Toggle group settings (botEnabled or autoReact)
 app.post("/api/groups/toggle", (req, res) => {
-  const { id, setting } = req.body; // setting: 'botEnabled' | 'autoReact'
+  const { id, setting } = req.body;
   if (!id || !setting) return res.json({ ok: false, msg: "Missing parameters" });
-  
-  const settings = require("./src/lib/database").getGroupSettings(id);
-  const currentVal = settings[setting];
-  const newVal = !currentVal;
-  
-  require("./src/lib/database").saveGroupSettings(id, { [setting]: newVal });
+
+  const { getGroupSettings, saveGroupSettings } = require("./src/lib/database");
+  const settings = getGroupSettings(id);
+  const newVal = !settings[setting];
+  saveGroupSettings(id, { [setting]: newVal });
   res.json({ ok: true, newVal });
 });
 
-// WebSocket: Send state on connection
+// WebSocket: Send full state on client connection
 io.on("connection", (socket) => {
   socket.emit("state", {
     ...global.__BOT_STATE,
@@ -239,6 +250,32 @@ io.on("connection", (socket) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
+// GLOBAL PROCESS EVENT HANDLERS (registered once, outside startBot)
+// ═══════════════════════════════════════════════════════════════
+
+process.on("uncaughtException", (e) => {
+  addLog("error", `Uncaught: ${e.message}`);
+  console.error(e);
+});
+process.on("unhandledRejection", (r) => {
+  addLog("error", `Unhandled rejection: ${r}`);
+});
+process.on("SIGINT", async () => {
+  addLog("info", "Shutting down (SIGINT)...");
+  if (global.__sock) {
+    try { await global.__sock.end(); } catch (e) {}
+  }
+  process.exit(0);
+});
+process.on("SIGTERM", async () => {
+  addLog("info", "Shutting down (SIGTERM)...");
+  if (global.__sock) {
+    try { await global.__sock.end(); } catch (e) {}
+  }
+  process.exit(0);
+});
+
+// ═══════════════════════════════════════════════════════════════
 // BOT SETUP
 // ═══════════════════════════════════════════════════════════════
 
@@ -253,8 +290,9 @@ async function startBot() {
     const usePairing = process.env.PAIRING_MODE === "true" || config.USE_PAIRING_CODE;
     const phoneNumber = process.env.PAIRING_NUMBER || config.OWNER_NUMBER[0];
 
-    addLog("info", `Starting GhostBot...`);
-    addLog("info", `Mode: ${usePairing ? "Pairing Code" : "QR Code"}`);
+    addLog("info", `Starting GhostBot v7.0...`);
+    addLog("info", `Session dir: ${config.SESSION_DIR}`);
+    addLog("info", `Auth mode: ${usePairing ? "Pairing Code" : "QR Code"}`);
 
     const sock = makeWASocket({
       version,
@@ -270,7 +308,6 @@ async function startBot() {
       syncFullHistory: false,
     });
 
-    // Save globally so endpoints can access
     global.__sock = sock;
 
     sock.ev.on("creds.update", saveCreds);
@@ -279,12 +316,14 @@ async function startBot() {
     if (usePairing && phoneNumber && !sock.authState.creds.registered) {
       addLog("info", `Requesting pairing code for +${phoneNumber}`);
       try {
+        // Small delay required by Baileys before requesting pairing code
+        await new Promise((r) => setTimeout(r, 3000));
         const code = await sock.requestPairingCode(phoneNumber);
         global.__BOT_STATE.pairingCode = code;
         global.__BOT_STATE.phoneNumber = phoneNumber;
         io.emit("pairingCode", { code, phoneNumber });
-        addLog("success", `Pairing code generated: ${code}`);
-        console.log(chalk.green.bold(`\n📱 PAIRING CODE: ${chalk.yellow.bold(code)}`));
+        addLog("success", `Pairing code: ${code}`);
+        console.log(chalk.green.bold(`\n📱 PAIRING CODE: ${chalk.yellow.bold(code)}\n`));
       } catch (e) {
         addLog("error", `Pairing error: ${e.message}`);
       }
@@ -308,10 +347,11 @@ async function startBot() {
       if (connection === "open") {
         global.__BOT_STATE.connection = "open";
         global.__BOT_STATE.qr = null;
+        global.__BOT_STATE.pairingCode = null;
         global.__BOT_STATE.userJid = sock.user?.id;
         global.__BOT_STATE.userName = sock.user?.name;
         io.emit("connectionState", { state: "open", user: sock.user });
-        addLog("success", "✅ Bot connected to WhatsApp!");
+        addLog("success", `✅ Bot connected! (${sock.user?.id})`);
         console.log(chalk.green.bold(`\n👻 GhostBot — ONLINE!\n`));
         loadCommands();
       }
@@ -321,13 +361,12 @@ async function startBot() {
         io.emit("connectionState", { state: "close" });
         const code = lastDisconnect?.error?.output?.statusCode;
         addLog("warn", `Connection closed (code: ${code})`);
-        if (code !== 401) {
-          if (global.__MANUAL_DISCONNECT) {
-            addLog("info", "Manual disconnect. Skipping auto-restart.");
-          } else {
-            addLog("info", "Reconnecting in 5s...");
-            setTimeout(() => process.exit(1), 5000);
-          }
+
+        if (code === 401) {
+          addLog("error", "Session expired (401). Use the dashboard to reconnect.");
+        } else if (!global.__MANUAL_DISCONNECT) {
+          addLog("info", "Reconnecting in 5s...");
+          setTimeout(() => process.exit(1), 5000);
         }
       }
 
@@ -345,52 +384,66 @@ async function startBot() {
           await messageHandler(sock, m);
         } catch (e) {
           global.__BOT_STATE.stats.errors++;
+          addLog("error", `Message handler error: ${e.message}`);
         }
       }
       io.emit("stats", global.__BOT_STATE.stats);
     });
 
-    // ── Group Events ────────────────────────────────────────
+    // ── Group participant events ─────────────────────────────
     sock.ev.on("group-participants.update", async (update) => {
       const { id, participants, action } = update;
       try {
+        const { getGroupSettings } = require("./src/lib/database");
         const groupMeta = await sock.groupMetadata(id);
-        const settings = require("./src/lib/database").getGroupSettings(id);
+        const settings = getGroupSettings(id);
+
         if (action === "add" && settings.welcome) {
           for (const jid of participants) {
             const name = `@${jid.split("@")[0]}`;
             await sock.sendMessage(id, {
-              text: `╭━━〔 ${config.BOT_NAME} 〕━━⬣\n┃ 👋 *WELCOME!*\n┃ Welcome to *${groupMeta.subject}*,\n┃ ${name} 🎉\n╰━━━━━━━━━━━━━━━━━━⬣`,
+              text:
+                `╭━━〔 ${config.BOT_NAME} 〕━━⬣\n` +
+                `┃ 👋 *WELCOME!*\n` +
+                `┃ Welcome to *${groupMeta.subject}*,\n` +
+                `┃ ${name} 🎉\n` +
+                `╰━━━━━━━━━━━━━━━━━━⬣`,
               mentions: [jid],
             });
           }
         }
-      } catch (e) { /* silent */ }
+
+        if (action === "remove" && settings.goodbye) {
+          for (const jid of participants) {
+            const name = `@${jid.split("@")[0]}`;
+            await sock.sendMessage(id, {
+              text:
+                `╭━━〔 ${config.BOT_NAME} 〕━━⬣\n` +
+                `┃ 😢 *GOODBYE*\n` +
+                `┃ ${name} has left.\n` +
+                `┃ We'll miss you! 💔\n` +
+                `╰━━━━━━━━━━━━━━━━━━⬣`,
+              mentions: [jid],
+            });
+          }
+        }
+      } catch (e) { /* group events are non-critical */ }
     });
 
-    // ── Graceful Shutdown ───────────────────────────────────
-    const shutdown = async () => {
-      addLog("info", "Shutting down...");
-      await sock.end();
-      process.exit(0);
-    };
-    process.on("SIGINT", shutdown);
-    process.on("SIGTERM", shutdown);
-    process.on("uncaughtException", (e) => addLog("error", `Uncaught: ${e.message}`));
-    process.on("unhandledRejection", (r) => addLog("error", `Unhandled: ${r}`));
   } catch (e) {
-    addLog("error", `Fatal: ${e.message}`);
-    process.exit(1);
+    addLog("error", `Fatal error in startBot: ${e.message}`);
+    console.error(e);
+    setTimeout(() => process.exit(1), 5000);
   }
 }
 
 // ═══════════════════════════════════════════════════════════════
-// LAUNCH BOTH SERVERS
+// LAUNCH
 // ═══════════════════════════════════════════════════════════════
 
 server.listen(PORT, "0.0.0.0", () => {
   console.log(chalk.magenta.bold(`\n🌐 WEB DASHBOARD: http://localhost:${PORT}`));
-  console.log(chalk.magenta.bold(`🌐 (Use your Replit URL or public IP)\n`));
+  console.log(chalk.magenta.bold(`📡 Session dir: ${config.SESSION_DIR}\n`));
 });
 
 startBot();

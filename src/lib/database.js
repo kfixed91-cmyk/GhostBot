@@ -5,7 +5,9 @@
 const fs = require("fs-extra");
 const path = require("path");
 
-const DB_DIR = path.join(__dirname, "..", "database");
+// On Render: set DB_DIR=/opt/render/project/src/data/database
+// On local:  defaults to ./src/database (relative to project root)
+const DB_DIR = process.env.DB_DIR || path.join(__dirname, "..", "database");
 
 // Ensure database directory and files exist
 function ensureDB() {
@@ -112,8 +114,8 @@ function getGroupSettings(jid) {
     antiBot: false,
     muteAll: false,
     mutedUsers: [],
-    botEnabled: true, // Enable/disable bot in group
-    autoReact: false,  // Auto-react in group
+    botEnabled: true,
+    autoReact: false,
   };
   return settings[jid] ? { ...defaults, ...settings[jid] } : defaults;
 }
@@ -121,6 +123,18 @@ function getGroupSettings(jid) {
 function saveGroupSettings(jid, data) {
   const settings = readDB("settings.json");
   settings[jid] = { ...getGroupSettings(jid), ...data };
+  return writeDB("settings.json", settings);
+}
+
+// Read/write a generic bot-level setting (key prefixed with __ to avoid JID collisions)
+function getBotSetting(key, defaultValue = null) {
+  const settings = readDB("settings.json");
+  return settings[`__${key}`] !== undefined ? settings[`__${key}`] : defaultValue;
+}
+
+function setBotSetting(key, value) {
+  const settings = readDB("settings.json");
+  settings[`__${key}`] = value;
   return writeDB("settings.json", settings);
 }
 
@@ -224,6 +238,8 @@ module.exports = {
   groupExists,
   getGroupSettings,
   saveGroupSettings,
+  getBotSetting,
+  setBotSetting,
   getPremiumUsers,
   isPremium,
   addPremium,

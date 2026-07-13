@@ -5,67 +5,67 @@
 
 module.exports = {
   // ======================== BOT IDENTITY ========================
-  BOT_NAME: "GhostBot",
-  OWNER_NAME: "King Fixed",
-  OWNER_NUMBER: ["50955394345"], // Add owner WhatsApp numbers with country code (no +, no spaces)
-  PREFIX: ".",
+  BOT_NAME: process.env.BOT_NAME || "GhostBot",
+  OWNER_NAME: process.env.OWNER_NAME || "King Fixed",
+  OWNER_NUMBER: (process.env.OWNER_NUMBER || "50955394345").split(",").map(n => n.trim()),
+  PREFIX: process.env.PREFIX || ".",
 
   // ======================== BOT MODE ========================
-  MODE: "public", // "public" = everyone can use | "private" = owner + allowed users only
-  ALLOWED_USERS: [], // JIDs of users allowed in private mode (leave empty to auto-detect from OWNER_NUMBER)
+  // "public" = everyone can use | "private" = owner + allowed users only
+  // Runtime changes via .mode command are saved to database/settings.json
+  MODE: process.env.BOT_MODE || "public",
+  ALLOWED_USERS: [],
 
   // ======================== AUTO BEHAVIORS ========================
-  AUTO_READ: true,       // Mark messages as read
-  AUTO_TYPING: false,    // Show typing indicator before replies
-  AUTO_RECORDING: false, // Show recording indicator before replies
-  AUTO_STATUS_READ: true, // Auto-read status updates
-  AUTO_BIO: false,       // Auto-update bio
-  ALWAYS_ONLINE: false,  // Keep the bot always online
+  AUTO_READ: true,
+  AUTO_TYPING: false,
+  AUTO_RECORDING: false,
+  AUTO_STATUS_READ: true,
+  AUTO_BIO: false,
+  ALWAYS_ONLINE: false,
 
   // ======================== GROUP DEFAULTS ========================
-  WELCOME: true,         // Welcome new members
-  GOODBYE: true,         // Say goodbye to leaving members
-  ANTI_LINK: false,      // Delete group invite links
-  ANTI_SPAM: true,       // Anti-spam protection
-  ANTI_BADWORD: false,   // Filter bad words
-  ANTI_DELETE: false,    // Repost deleted messages
-  ANTI_BOT: false,       // Kick other bots
-  ANTI_VIRTEX: true,     // Anti-crash protection
-  MUTE_DURATION: 300,    // Default mute duration in seconds (5 min)
+  WELCOME: true,
+  GOODBYE: true,
+  ANTI_LINK: false,
+  ANTI_SPAM: true,
+  ANTI_BADWORD: false,
+  ANTI_DELETE: false,
+  ANTI_BOT: false,
+  ANTI_VIRTEX: true,
+  MUTE_DURATION: 300,
 
   // ======================== COMMAND SETTINGS ========================
   COOLDOWN_ENABLED: true,
-  COOLDOWN_DURATION: 3000, // 3 seconds between commands
-  DISABLED_COMMANDS: [],    // Commands to disable globally
+  COOLDOWN_DURATION: 3000,
+  DISABLED_COMMANDS: [],
 
   // ======================== API KEYS ========================
-  // AI APIs
-  OPENAI_API_KEY: "",     // https://platform.openai.com/api-keys
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",     // https://aistudio.google.com/apikey
-  AI_PROVIDER: "gemini",  // "openai" | "gemini" | "custom"
+  // All keys are read from environment variables — never hardcode them here
+  OPENAI_API_KEY: process.env.OPENAI_API_KEY || "",
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
+  AI_PROVIDER: process.env.AI_PROVIDER || "gemini",
 
-  // Downloader APIs (optional — will use public APIs when empty)
-  YTDL_API: "",           // Custom YouTube download API
-  TIKTOK_API: "",         // Custom TikTok download API
+  YTDL_API: process.env.YTDL_API || "",
+  TIKTOK_API: process.env.TIKTOK_API || "",
 
-  // Other APIs
-  REMOVEBG_API_KEY: "",   // https://remove.bg/api
-  OPENWEATHER_API_KEY: "",// https://openweathermap.org/api
-  OCR_API_KEY: "",        // https://ocr.space/ocrapi
+  REMOVEBG_API_KEY: process.env.REMOVEBG_API_KEY || "",
+  OPENWEATHER_API_KEY: process.env.OPENWEATHER_API_KEY || "",
+  OCR_API_KEY: process.env.OCR_API_KEY || "",
 
   // ======================== STICKER SETTINGS ========================
-  STICKER_PACK: "GhostBot",
-  STICKER_AUTHOR: "King Fixed",
-  STICKER_MAX_VIDEO_DURATION: 10, // seconds
+  STICKER_PACK: process.env.STICKER_PACK || "GhostBot",
+  STICKER_AUTHOR: process.env.STICKER_AUTHOR || "King Fixed",
+  STICKER_MAX_VIDEO_DURATION: 10,
 
   // ======================== TIMEZONE ========================
-  TIMEZONE: "America/Port-au-Prince",
+  TIMEZONE: process.env.TIMEZONE || "America/Port-au-Prince",
 
   // ======================== LANGUAGE ========================
-  LANGUAGE: "en", // "en" | "fr" | "ht"
+  LANGUAGE: process.env.LANGUAGE || "en",
 
   // ======================== REACTIONS ========================
-  ENABLE_REACTIONS: true, // React to commands with emojis
+  ENABLE_REACTIONS: true,
   SUCCESS_REACTION: "✅",
   ERROR_REACTION: "❌",
   PROCESSING_REACTION: "⏳",
@@ -78,9 +78,8 @@ module.exports = {
   CURRENCY_SYMBOL: "💎",
 
   // ======================== SESSION ========================
-  SESSION_DIR: "./session",
-  USE_PAIRING_CODE: true, // true = pairing code | false = QR code
-
-  // ======================== RE-READ THESE WHEN CHANGING ========================
-  // After changing config, restart the bot with: node main.js
+  // On Render: set SESSION_DIR=/opt/render/project/src/data/session
+  // On local:  defaults to ./session
+  SESSION_DIR: process.env.SESSION_DIR || "./session",
+  USE_PAIRING_CODE: process.env.USE_PAIRING_CODE !== "false",
 };

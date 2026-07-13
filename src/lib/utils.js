@@ -44,19 +44,52 @@ function getUptime(startTime) {
 }
 
 /**
- * Format file size
+ * Format file size in bytes to human-readable
  */
 function formatSize(bytes) {
-  if (bytes === 0) return "0 B";
+  if (!bytes || bytes === 0) return "0 B";
   const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
 }
 
 /**
+ * Get system information (used by .alive command)
+ */
+function getSystemInfo() {
+  const totalRAM = os.totalmem();
+  const freeRAM = os.freemem();
+  const usedRAM = totalRAM - freeRAM;
+  return {
+    platform: os.platform(),
+    arch: os.arch(),
+    totalRAM: formatSize(totalRAM),
+    freeRAM: formatSize(freeRAM),
+    usedRAM: formatSize(usedRAM),
+    cpuCount: os.cpus().length,
+    nodeVersion: process.version,
+    hostname: os.hostname(),
+  };
+}
+
+/**
+ * Check if a string is a valid URL
+ */
+function isValidUrl(str) {
+  if (!str || typeof str !== "string") return false;
+  try {
+    const url = new URL(str);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Pick a random element from an array
  */
 function randomPick(arr) {
+  if (!arr || !arr.length) return null;
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
@@ -78,11 +111,17 @@ function extractText(m) {
   if (msg.imageMessage) return msg.imageMessage.caption || "";
   if (msg.videoMessage) return msg.videoMessage.caption || "";
   if (msg.documentMessage) return msg.documentMessage.caption || "";
+  if (msg.viewOnceMessage) {
+    const inner = msg.viewOnceMessage.message;
+    if (!inner) return "";
+    const type = Object.keys(inner)[0];
+    return inner[type]?.caption || inner[type]?.text || "";
+  }
   return "";
 }
 
 /**
- * Extract quoted message
+ * Extract quoted message context
  */
 function getQuoted(m) {
   if (!m || !m.message) return null;
@@ -96,6 +135,12 @@ function getQuoted(m) {
   if (msg.videoMessage?.contextInfo?.quotedMessage) {
     return msg.videoMessage.contextInfo;
   }
+  if (msg.audioMessage?.contextInfo?.quotedMessage) {
+    return msg.audioMessage.contextInfo;
+  }
+  if (msg.documentMessage?.contextInfo?.quotedMessage) {
+    return msg.documentMessage.contextInfo;
+  }
   return null;
 }
 
@@ -104,8 +149,7 @@ function getQuoted(m) {
  */
 function getMessageType(m) {
   if (!m || !m.message) return "unknown";
-  const msg = m.message;
-  const keys = Object.keys(msg);
+  const keys = Object.keys(m.message);
   return keys[0] || "unknown";
 }
 
@@ -145,74 +189,33 @@ function getPushName(m) {
 }
 
 /**
- * Parse arguments from a command
+ * Parse arguments from a command text
  */
 function parseArgs(text, prefix) {
-  if (!text) return [];
-  // Remove prefix and command name, get args
-  const withoutPrefix = text.startsWith(prefix) ? text.slice(prefix.length) : text;
-  const parts = withoutPrefix.trim().split(/ +/);
-  parts.shift(); // Remove command name
-  return parts;
+  if (!text) return { command: "", args: [], argsText: "" };
+  const body = text.startsWith(prefix) ? text.slice(prefix.length).trim() : text.trim();
+  const parts = body.split(/\s+/);
+  const command = parts[0]?.toLowerCase() || "";
+  const args = parts.slice(1);
+  const argsText = args.join(" ");
+  return { command, args, argsText };
 }
 
 /**
- * Get args as a single string (after command)
+ * Check if user is owner
  */
-function getArgs(text, prefix) {
+function isOwner(sender, ownerNumbers) {
+  if (!sender || !ownerNumbers) return false;
+  const senderNum = sender.replace("@s.whatsapp.net", "").replace(/\D/g, "");
+  return ownerNumbers.some((n) => n.replace(/\D/g, "") === senderNum);
+}
+
+/**
+ * Truncate text to a max length
+ */
+function truncate(text, maxLen = 100) {
   if (!text) return "";
-  const withoutPrefix = text.startsWith(prefix) ? text.slice(prefix.length) : text;
-  const spaceIdx = withoutPrefix.indexOf(" ");
-  if (spaceIdx === -1) return "";
-  return withoutPrefix.slice(spaceIdx + 1).trim();
-}
-
-/**
- * Get system info
- */
-function getSystemInfo() {
-  return {
-    platform: os.platform(),
-    arch: os.arch(),
-    nodeVersion: process.version,
-    totalRAM: formatSize(os.totalmem()),
-    freeRAM: formatSize(os.freemem()),
-    uptime: formatDuration(os.uptime() * 1000),
-    cpus: os.cpus().length,
-  };
-}
-
-/**
- * Check if a string is a valid URL
- */
-function isValidUrl(str) {
-  try {
-    new URL(str);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Generate a random ID
- */
-function generateId(length = 8) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
-
-/**
- * Truncate text
- */
-function truncate(text, maxLength = 100) {
-  if (!text) return "";
-  if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + "...";
+  return text.length > maxLen ? text.slice(0, maxLen) + "..." : text;
 }
 
 module.exports = {
@@ -221,6 +224,8 @@ module.exports = {
   formatDuration,
   getUptime,
   formatSize,
+  getSystemInfo,
+  isValidUrl,
   randomPick,
   sleep,
   extractText,
@@ -232,9 +237,6 @@ module.exports = {
   getChatId,
   getPushName,
   parseArgs,
-  getArgs,
-  getSystemInfo,
-  isValidUrl,
-  generateId,
+  isOwner,
   truncate,
 };

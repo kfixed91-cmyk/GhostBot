@@ -6,13 +6,36 @@ services:
     buildCommand: npm install
     startCommand: node main.js
     healthCheckPath: /api/state
+
+    # Persistent disk — keeps session + database across restarts
     disk:
       name: ghostbot-data
-      mountPath: /opt/render/project/src/session
+      mountPath: /opt/render/project/src/data
       sizeGB: 1
+
     envVars:
       - key: NODE_ENV
         value: production
+
+      # Persistent paths (must match disk mountPath above)
+      - key: SESSION_DIR
+        value: /opt/render/project/src/data/session
+      - key: DB_DIR
+        value: /opt/render/project/src/data/database
+
+      # Bot identity (override as needed)
+      - key: BOT_NAME
+        value: GhostBot
+      - key: OWNER_NAME
+        value: King Fixed
+      - key: OWNER_NUMBER
+        value: "50955394345"
+      - key: PREFIX
+        value: "."
+      - key: TIMEZONE
+        value: America/Port-au-Prince
+
+      # API Keys — set these in Render dashboard (never commit real keys)
       - key: GEMINI_API_KEY
         sync: false
       - key: OPENAI_API_KEY
