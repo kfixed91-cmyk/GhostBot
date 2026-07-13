@@ -142,8 +142,10 @@ app.post("/api/pairing", (req, res) => {
 
   setTimeout(() => {
     global.__MANUAL_DISCONNECT = false;
+    // Ensure old socket is fully cleaned up before starting new one
+    if (global.__sock) { try { global.__sock.end(); } catch(e) {} global.__sock = null; }
     startBot();
-  }, 1000);
+  }, 2000);
 });
 
 // API: Logout and clear session
@@ -170,8 +172,9 @@ app.post("/api/logout", (req, res) => {
 
   setTimeout(() => {
     global.__MANUAL_DISCONNECT = false;
+    if (global.__sock) { try { global.__sock.end(); } catch(e) {} global.__sock = null; }
     startBot();
-  }, 1000);
+  }, 2000);
 });
 
 // API: Get command list
@@ -296,14 +299,19 @@ async function startBot() {
     addLog("info", `Session dir: ${config.SESSION_DIR}`);
     addLog("info", `Auth mode: ${usePairing && phoneNumber ? "Pairing Code" : "QR Code"}`);
 
+    // Cleanup any existing socket first to avoid event listener leaks
+    if (global.__sock && global.__sock !== sock) {
+      try { global.__sock.end(); } catch (e) {}
+    }
+
     const sock = makeWASocket({
       version,
       auth: state,
       printQRInTerminal: !usePairing,
-      browser: Browsers.ubuntu("Chrome"),
+      browser: ["Chrome (Linux)", "", ""],
       logger: pino({ level: "silent" }),
-      defaultQueryTimeoutMs: 60000,
-      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: undefined,
+      connectTimeoutMs: undefined,
       keepAliveIntervalMs: 30000,
       emitOwnEvents: true,
       markOnlineOnConnect: config.ALWAYS_ONLINE,
@@ -325,24 +333,30 @@ async function startBot() {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        if (usePairing && cleanPhone && !sock.authState.creds.registered && !pairingRequested) {
+        if (usePairing && cleanPhone && !pairingRequested) {
           // ── Pairing Code path ─────────────────────────────
-          // Call requestPairingCode HERE — inside qr event — because this fires
-          // exactly when Baileys has connected to WS servers and is ready for auth.
+          // Wait for socket to be fully ready then request pairing code.
+          // requestPairingCode must be called AFTER WS connection is established.
           pairingRequested = true;
           addLog("info", `Requesting pairing code for +${cleanPhone}`);
           try {
+            // Small delay to ensure WebSocket is fully initialized
+            await new Promise(r => setTimeout(r, 1500));
             const code = await sock.requestPairingCode(cleanPhone);
             global.__BOT_STATE.pairingCode = code;
             global.__BOT_STATE.phoneNumber = cleanPhone;
+            global.__BOT_STATE.connection = "connecting";
             io.emit("pairingCode", { code, phoneNumber: cleanPhone });
             addLog("success", `Pairing code ready: ${code}`);
             console.log(chalk.green.bold(`\n📱 PAIRING CODE: ${chalk.yellow.bold(code)}\n`));
           } catch (e) {
             addLog("error", `Pairing code error: ${e.message}`);
+            global.__BOT_STATE.connection = "close";
             io.emit("pairingError", { msg: e.message });
+            // Reset so user can retry without restarting the bot
+            pairingRequested = false;
           }
-        } else {
+        } else if (!usePairing) {
           // ── QR Code path ─────────────────────────────────
           QRCode.toDataURL(qr, (err, url) => {
             if (!err) {
@@ -358,7 +372,7 @@ async function startBot() {
       if (connection === "open") {
         global.__BOT_STATE.connection = "open";
         global.__BOT_STATE.qr = null;
-        global.__BOT_STATE.pairingCode = null;
+        global.__BOT_MPTE.pairingCode = null;
         global.__BOT_STATE.phoneNumber = null; // clear — never keep number in memory
         global.__BOT_STATE.userJid = sock.user?.id;
         global.__BOT_STATE.userName = sock.user?.name;
@@ -378,10 +392,19 @@ async function startBot() {
         addLog("warn", `Connection closed (code: ${code})`);
 
         if (code === 401) {
-          addLog("error", "Session expired (401). Use the dashboard to reconnect.");
+          addLog("error", "Session expired (401). Clearing session and restarting...");
+          try {
+            if (global.__sock) { try { global.__sock.end(); } catch(e) {} }
+            fs.removeSync(config.SESSION_DIR);
+            fs.ensureDirSync(config.SESSION_DIR);
+          } catch(e) {}
+          setTimeout(() => startBot(), 3000);
         } else if (!global.__MANUAL_DISCONNECT) {
           addLog("info", "Reconnecting in 5s...");
-          setTimeout(() => process.exit(1), 5000);
+          setTimeout(() => {
+            if (global.__sock) { try { global.__sock.end(); } catch(e) {} }
+            startBot();
+          }, 5000);
         }
       }
 
